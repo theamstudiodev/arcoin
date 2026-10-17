@@ -1,3 +1,10 @@
+import {LoginForm} from '@/app/login/login-form';
+
 export default function LoginPage() {
-  return <h1>Sign in</h1>;
+  return (
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
+      <h1 className="text-2xl font-bold">Sign in</h1>
+      <LoginForm />
+    </main>
+  );
 }

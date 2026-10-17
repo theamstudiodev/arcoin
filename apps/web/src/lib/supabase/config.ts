@@ -1,4 +1,4 @@
-import type {CookieOptionsWithName} from '@supabase/ssr';
+import type {CookieOptions} from '@supabase/ssr';
 
 /** The project URL and browser-safe key. Read when used, not on import: CI builds without .env.local. */
 export function supabaseEnv(): {url: string; key: string} {
@@ -15,6 +15,14 @@ export function supabaseEnv(): {url: string; key: string} {
 
 /**
  * 90 days, renewed whenever the session refreshes: people re-enter a code only after three months away.
- * Supabase refresh tokens themselves never expire, so this cookie is the session length.
+ * Supabase refresh tokens never expire, so the cookie's lifetime is the session length.
  */
-export const SESSION_COOKIE: CookieOptionsWithName = {maxAge: 60 * 60 * 24 * 90};
+const SESSION_MAX_AGE = 60 * 60 * 24 * 90;
+
+/**
+ * @supabase/ssr writes its session cookies for 400 days and ignores `cookieOptions.maxAge`, so every cookie
+ * handler passes the library's options through this. A max-age of 0 is a deletion and stays one.
+ */
+export function withSessionLength(options: CookieOptions): CookieOptions {
+  return options.maxAge === 0 ? options : {...options, maxAge: SESSION_MAX_AGE};
+}

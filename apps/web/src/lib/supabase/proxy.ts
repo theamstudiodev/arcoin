@@ -1,7 +1,7 @@
 import {createServerClient} from '@supabase/ssr';
 import {type NextRequest, NextResponse} from 'next/server';
 import type {Database} from '@/lib/database.types';
-import {SESSION_COOKIE, supabaseEnv} from '@/lib/supabase/config';
+import {supabaseEnv, withSessionLength} from '@/lib/supabase/config';
 
 /** Pages a signed-out visitor may open. */
 export const PUBLIC_PATHS = ['/login'];
@@ -18,14 +18,13 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   let cacheHeaders: Record<string, string> = {};
 
   const supabase = createServerClient<Database>(url, key, {
-    cookieOptions: SESSION_COOKIE,
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet, headers) {
         // The page rendering this request reads the refreshed tokens; the browser stores them.
         for (const {name, value} of cookiesToSet) request.cookies.set(name, value);
         response = NextResponse.next({request});
-        for (const {name, value, options} of cookiesToSet) response.cookies.set(name, value, options);
+        for (const {name, value, options} of cookiesToSet) response.cookies.set(name, value, withSessionLength(options));
         // A response carrying someone's session must never be cached and served to someone else.
         cacheHeaders = headers;
         for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
