@@ -30,6 +30,15 @@ export async function setPasswordThroughUi(page: Page, email: string, password =
   await expect(page).toHaveURL(/\/people$/);
 }
 
+/** A Supabase client signed in as `email`, standing in for another device or a direct API caller. */
+export async function signInWithPassword(email: string, password = TEST_PASSWORD) {
+  const {url, key} = supabaseEnv();
+  const supabase = createClient<Database>(url, key, {auth: {persistSession: false, autoRefreshToken: false}});
+  const {error} = await supabase.auth.signInWithPassword({email, password});
+  if (error) throw new Error(`Couldn't sign in as ${email}: ${error.message}`);
+  return supabase;
+}
+
 /** Makes sure a seeded team member can sign in with `password`, setting it through the code flow if not. */
 export async function ensurePassword(email: string, password = TEST_PASSWORD): Promise<void> {
   const {url, key} = supabaseEnv();

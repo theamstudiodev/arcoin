@@ -69,6 +69,9 @@ export async function setPassword(input: SetPasswordInput): Promise<ActionResult
     const error = setPasswordErrorMessage(updated.error);
     return {ok: false, error, fieldErrors: {password: error}};
   }
+  // Resetting a password is how someone takes back their account, e.g. from a lost phone: end every other
+  // session. Supabase does this itself when the password changes, but not when it's set to the same one again.
+  await supabase.auth.signOut({scope: 'others'});
   redirect('/people', RedirectType.replace);
 }
 
