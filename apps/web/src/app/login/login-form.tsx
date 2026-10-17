@@ -11,6 +11,13 @@ import {sendCodeSchema, verifyCodeSchema} from '@/lib/schemas/auth';
 
 const SLOTS = [0, 1, 2, 3, 4, 5];
 
+// The card is dark (see page.tsx): labels in Plex Mono, errors in a red tint, secondary actions in pale blue-grey.
+const LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const ALERT = 'rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-sm text-red-200';
+const SECONDARY = 'h-11 px-2 text-muted-foreground hover:bg-muted hover:text-white';
+// The shadcn hover fades the button into the navy card (olive); keep it solid lime and brighten it instead.
+const PRIMARY = 'h-11 font-semibold hover:bg-primary hover:brightness-110';
+
 /** Email first, then the 6-digit code from that email. The code is typed inside the app, so it works in an installed iPhone app too. */
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -83,9 +90,11 @@ export function LoginForm() {
 
   if (!sentTo) {
     return (
-      <form onSubmit={submitEmail} noValidate className="flex flex-col gap-4">
+      <form onSubmit={submitEmail} noValidate className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className={LABEL}>
+            Email
+          </Label>
           <Input
             id="email"
             name="email"
@@ -96,12 +105,16 @@ export function LoginForm() {
             spellCheck={false}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="h-11 md:h-9"
+            className="h-11"
           />
           <p className="text-xs text-muted-foreground">We&apos;ll email you a 6-digit code.</p>
         </div>
-        {error && <p role="alert">{error}</p>}
-        <Button type="submit" disabled={pending} className="h-11 md:h-9">
+        {error && (
+          <p role="alert" className={ALERT}>
+            {error}
+          </p>
+        )}
+        <Button type="submit" disabled={pending} className={PRIMARY}>
           {pending ? 'Sending…' : 'Send code'}
         </Button>
       </form>
@@ -109,12 +122,15 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={submitCode} noValidate className="flex flex-col gap-4">
-      <p className="text-sm">
-        Enter the 6-digit code sent to <span className="font-medium break-all">{sentTo}</span>.
+    <form onSubmit={submitCode} noValidate className="flex flex-col gap-5">
+      <p className="text-sm text-muted-foreground">
+        Enter the 6-digit code sent to
+        <span className="block font-medium text-white [overflow-wrap:anywhere]">{sentTo}</span>
       </p>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="code">Code</Label>
+        <Label htmlFor="code" className={LABEL}>
+          Code
+        </Label>
         <InputOTP
           ref={codeInput}
           id="code"
@@ -127,23 +143,31 @@ export function LoginForm() {
           value={code}
           onChange={setCode}
         >
-          <InputOTPGroup>
+          <InputOTPGroup className="gap-2">
             {SLOTS.map((index) => (
-              <InputOTPSlot key={index} index={index} className="size-11" />
+              <InputOTPSlot key={index} index={index} className="size-11 rounded-lg border font-mono text-xl md:size-12" />
             ))}
           </InputOTPGroup>
         </InputOTP>
       </div>
-      {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
-      <Button type="submit" disabled={pending} className="h-11 md:h-9">
+      {error && (
+        <p role="alert" className={ALERT}>
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="text-sm text-lime-500">
+          {notice}
+        </p>
+      )}
+      <Button type="submit" disabled={pending} className={PRIMARY}>
         {pending ? 'Checking…' : 'Sign in'}
       </Button>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button type="button" variant="ghost" onClick={changeEmail} className="h-11 md:h-9">
+      <div className="-mx-2 flex flex-wrap items-center justify-between gap-1">
+        <Button type="button" variant="ghost" onClick={changeEmail} className={SECONDARY}>
           Use a different email
         </Button>
-        <Button type="button" variant="link" onClick={resendCode} disabled={pending} className="h-11 md:h-9">
+        <Button type="button" variant="ghost" onClick={resendCode} disabled={pending} className={SECONDARY}>
           Send a new code
         </Button>
       </div>

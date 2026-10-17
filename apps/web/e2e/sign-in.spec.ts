@@ -14,7 +14,8 @@ test('Athiq signs in with the emailed code', async ({page}) => {
   await expect(page.getByRole('main').getByRole('alert')).toContainText('That code is wrong or has expired');
   await expect(page.getByLabel('Code')).toHaveValue('');
 
-  const {code} = await waitForCode('athiq@amstudio.test', before);
+  const {code, subject} = await waitForCode('athiq@amstudio.test', before);
+  expect(subject).toBe('Your Arcoin sign-in code');
   await page.getByLabel('Code').fill(code);
   await page.getByRole('button', {name: 'Sign in'}).click();
   await expect(page).toHaveURL(/\/people$/);
@@ -35,4 +36,13 @@ test('a stranger is refused', async ({page}) => {
     "This email isn't on the AM Studio team list. Ask Athiq to add you.",
   );
   await expect(page.getByLabel('Code')).toHaveCount(0);
+});
+
+test('the blueprint drifts, and stands still for reduced motion', async ({page}) => {
+  await page.goto('/login');
+  await expect(page.locator('.bg-blueprint')).toHaveCSS('animation-name', 'blueprint-drift');
+
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  await page.reload();
+  await expect(page.locator('.bg-blueprint')).toHaveCSS('animation-name', 'none');
 });

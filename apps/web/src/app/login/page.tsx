@@ -1,10 +1,37 @@
 import {LoginForm} from '@/app/login/login-form';
+import {APP_NAME} from '@/lib/brand';
+
+// Re-themes the shadcn parts for the dark card: a lime main button with navy text, lime focus rings, pale borders.
+const CARD_TOKENS =
+  '[--primary:#A3E635] [--primary-foreground:#081C33] [--ring:#A3E635] [--input:rgba(201,214,229,0.22)] ' +
+  '[--border:rgba(201,214,229,0.22)] [--foreground:#FFFFFF] [--muted-foreground:#C9D6E5] [--muted:rgba(201,214,229,0.08)]';
+
+// L-shaped crop marks just outside the card's corners, like the corners of a drawing sheet.
+const MARK = 'pointer-events-none absolute size-[26px] border-lime-500/45';
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
-      <h1 className="text-2xl font-bold">Sign in</h1>
-      <LoginForm />
+    <main className="bg-blueprint flex min-h-dvh flex-1 flex-col items-center justify-center px-4 py-10">
+      <div className="relative w-full max-w-sm">
+        <span aria-hidden className={`${MARK} -top-2 -left-2 border-t-[1.5px] border-l-[1.5px]`} />
+        <span aria-hidden className={`${MARK} -top-2 -right-2 border-t-[1.5px] border-r-[1.5px]`} />
+        <span aria-hidden className={`${MARK} -bottom-2 -left-2 border-b-[1.5px] border-l-[1.5px]`} />
+        <span aria-hidden className={`${MARK} -right-2 -bottom-2 border-r-[1.5px] border-b-[1.5px]`} />
+
+        <div
+          className={`${CARD_TOKENS} rounded-lg border border-[rgba(201,214,229,0.22)] bg-navy-800/80 p-6 text-white backdrop-blur-md`}
+        >
+          <div className="mb-6">
+            <h1 className="flex items-center gap-2.5 text-[28px] leading-none font-extrabold tracking-tight">
+              <span aria-hidden className="size-4 rounded-[3px] bg-lime-500" />
+              {APP_NAME}
+            </h1>
+            <p className="mt-2 text-[13px] text-[#C9D6E5]">AM Studio</p>
+          </div>
+          <LoginForm />
+        </div>
+      </div>
+      <p className="mt-8 text-xs text-[#C9D6E5]">{APP_NAME} — AM Studio internal tool</p>
     </main>
   );
 }

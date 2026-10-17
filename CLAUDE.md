@@ -182,6 +182,15 @@ Design the policies now so those slot in without rework.
 - Error messages name what went wrong and what to do: "Task needs an assignee before it can be
   scheduled", never "Invalid input".
 
+## Design
+
+- The product's visible name is **Arcoin** — login, top bar, tab title, sign-in email (`APP_NAME` in
+  `apps/web/src/lib/brand.ts`). Code, packages, tables and docs keep `studesk`.
+- `bg-blueprint` (`apps/web/src/app/globals.css`) is used ONLY on the login page, the PWA splash and empty states.
+  Working screens — People, Projects, Timeline and every other data screen — stay on the light background `#F6F7F8`,
+  because dense data reads better on light.
+- Colours, type scale and density: `docs/STITCH-PROMPTS.md` Part 1.
+
 ## Do not
 
 - Do not add a column, index or policy "while you're there" — every schema change is its own reviewed migration.

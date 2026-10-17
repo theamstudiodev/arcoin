@@ -417,4 +417,4 @@ enabled = true
 
 [auth.email.template.magic_link]
 content_path = "./supabase/templates/sign-in-code.html"
-subject = "Your Studesk sign-in code"
+subject = "Your Arcoin sign-in code"

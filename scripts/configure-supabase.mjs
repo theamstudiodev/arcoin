@@ -11,7 +11,7 @@ const SETTINGS = {
   },
   'auth.email': {enable_signup: 'true', otp_length: '6', otp_expiry: '600'},
   'auth.email.template.magic_link': {
-    subject: '"Your Studesk sign-in code"',
+    subject: '"Your Arcoin sign-in code"',
     content_path: '"./supabase/templates/sign-in-code.html"',
   },
 };
