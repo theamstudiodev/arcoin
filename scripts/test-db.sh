@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Builds a throwaway database from the migrations + seed, runs the access test suite, drops it.
+#
+#   ./scripts/test-db.sh                                   # local Supabase (supabase start)
+#   ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres ./scripts/test-db.sh   # any Postgres
+#
+# Against plain Postgres it first loads a small stand-in for Supabase's auth schema.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+ADMIN_URL="${ADMIN_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+DB="studesk_test_$$"
+# swap the database name in the URL, keeping any ?query parameters
+base="${ADMIN_URL%%\?*}"; query="${ADMIN_URL#"$base"}"
+TEST_URL="${base%/*}/$DB$query"
+PSQL=(psql -v ON_ERROR_STOP=1 -q -X)
+
+cleanup() { "${PSQL[@]}" "$ADMIN_URL" -c "drop database if exists $DB" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+
+"${PSQL[@]}" "$ADMIN_URL" -c "create database $DB" >/dev/null
+
+if [ "$("${PSQL[@]}" -At "$TEST_URL" -c "select count(*) from information_schema.tables where table_schema='auth' and table_name='users'")" = "0" ]; then
+  echo "· plain Postgres detected — loading the Supabase auth stand-in"
+  "${PSQL[@]}" "$TEST_URL" -f supabase/tests/stub/supabase_stub.sql >/dev/null
+fi
+
+for f in supabase/migrations/*.sql; do
+  echo "· migrate  $(basename "$f")"
+  "${PSQL[@]}" "$TEST_URL" -f "$f" >/dev/null
+done
+echo "· seed"
+"${PSQL[@]}" "$TEST_URL" -f supabase/seed.sql >/dev/null
+
+echo "· access tests"
+"${PSQL[@]}" "$TEST_URL" -f supabase/tests/access_test.sql 2>&1 | sed -E 's/^psql:[^:]*:[0-9]+: //; s/^NOTICE:  //'

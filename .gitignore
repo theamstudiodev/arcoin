@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+coverage/
+.env
+.env.local
+.env.*.local
+*.dump
+supabase/.branches
+supabase/.temp
+.DS_Store
