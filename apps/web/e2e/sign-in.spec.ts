@@ -1,5 +1,5 @@
 import {expect, type Page, test} from '@playwright/test';
-import {TEST_PASSWORD} from './helpers/auth';
+import {signInThroughUi, TEST_PASSWORD} from './helpers/auth';
 import {addTeamMember} from './helpers/db';
 import {mailpitIds, waitForCode} from './helpers/mailpit';
 
@@ -19,6 +19,20 @@ test('Athiq signs in with his password', async ({page}) => {
   const daysLeft = ((session?.expires ?? 0) - Date.now() / 1000) / 86_400;
   expect(daysLeft).toBeGreaterThan(89);
   expect(daysLeft).toBeLessThanOrEqual(90);
+
+  await expect(page.getByRole('banner')).toContainText('Ar. Athiq');
+});
+
+test('signing out ends the session on this device', async ({page}) => {
+  await signInThroughUi(page, 'athiq@amstudio.test');
+  // Signed in, the sign-in screen sends him straight back to work.
+  await page.goto('/login');
+  await expect(page).toHaveURL(/\/people$/);
+
+  await page.getByRole('banner').getByRole('button', {name: 'Sign out'}).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto('/people');
+  await expect(page).toHaveURL(/\/login$/);
 });
 
 test('a wrong password is refused plainly', async ({page}) => {

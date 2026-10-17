@@ -1,5 +1,8 @@
+import {redirect} from 'next/navigation';
 import {LoginForm} from '@/app/login/login-form';
+import {NOT_ON_TEAM} from '@/lib/auth-errors';
 import {APP_NAME} from '@/lib/brand';
+import {getViewer} from '@/lib/me';
 
 // Re-themes the shadcn parts for the dark card: a lime main button with navy text, lime focus rings, pale borders.
 const CARD_TOKENS =
@@ -9,7 +12,12 @@ const CARD_TOKENS =
 // L-shaped crop marks just outside the card's corners, like the corners of a drawing sheet.
 const MARK = 'pointer-events-none absolute size-[26px] border-lime-500/45';
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Signed in and on the team: straight to work. Signed in but no longer on the team: say so here, rather than send
+  // them round between the two screens. If the lookup itself fails, show the form; signing in reports its own errors.
+  const viewer = await getViewer().catch(() => null);
+  if (viewer?.me) redirect('/people');
+
   return (
     <main className="bg-blueprint flex min-h-dvh flex-1 flex-col items-center justify-center px-4 py-10">
       <div className="relative w-full max-w-sm">
@@ -25,7 +33,7 @@ export default function LoginPage() {
             <span aria-hidden className="size-4 rounded-[3px] bg-lime-500" />
             {APP_NAME}
           </h1>
-          <LoginForm />
+          <LoginForm refusal={viewer?.signedIn ? NOT_ON_TEAM : undefined} />
         </div>
       </div>
     </main>

@@ -24,14 +24,14 @@ type Mode = 'sign-in' | 'set-password';
  * Day to day: email and password. The first password, or a new one when it's forgotten, is set with a 6-digit code
  * from an email, typed here in the app, so it works in an installed iPhone app too.
  */
-export function LoginForm() {
+export function LoginForm({refusal}: {refusal?: string}) {
   const [mode, setMode] = useState<Mode>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPasswordText] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(refusal ?? null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const codeInput = useRef<HTMLInputElement>(null);
