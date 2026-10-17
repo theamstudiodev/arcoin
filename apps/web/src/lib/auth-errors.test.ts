@@ -1,5 +1,27 @@
 import {describe, expect, it} from 'vitest';
-import {sendCodeErrorMessage, verifyCodeErrorMessage} from '@/lib/auth-errors';
+import {
+  isSamePassword,
+  sendCodeErrorMessage,
+  setPasswordErrorMessage,
+  signInErrorMessage,
+  verifyCodeErrorMessage,
+} from '@/lib/auth-errors';
+
+describe('signInErrorMessage', () => {
+  it('says the email and password do not match, without saying which', () => {
+    expect(signInErrorMessage({status: 400, code: 'invalid_credentials', message: 'Invalid login credentials'}))
+      .toBe("That email and password don't match. Try again, or set a new password.");
+  });
+
+  it('asks to wait after too many tries', () => {
+    expect(signInErrorMessage({status: 429, code: 'over_request_rate_limit', message: 'Request rate limit reached'}))
+      .toBe('Too many tries. Wait a few minutes, then try again.');
+  });
+
+  it('falls back to the connection when the service cannot be reached', () => {
+    expect(signInErrorMessage({message: 'fetch failed'})).toBe("Couldn't sign in. Check your connection and try again.");
+  });
+});
 
 describe('sendCodeErrorMessage', () => {
   it('names the team list when the database refuses the sign-up', () => {
@@ -33,5 +55,28 @@ describe('verifyCodeErrorMessage', () => {
   it('falls back to the connection when the service cannot be reached', () => {
     expect(verifyCodeErrorMessage({message: 'fetch failed'}))
       .toBe("Couldn't check the code. Check your connection and try again.");
+  });
+});
+
+describe('setPasswordErrorMessage', () => {
+  it('asks for a longer password when Supabase calls it weak', () => {
+    expect(setPasswordErrorMessage({status: 422, code: 'weak_password', message: 'Password should be at least 8 characters.'}))
+      .toBe('Choose a longer password: at least 8 characters.');
+  });
+
+  it('falls back to the connection otherwise', () => {
+    expect(setPasswordErrorMessage({message: 'fetch failed'}))
+      .toBe("Couldn't save your password. Check your connection and try again.");
+  });
+});
+
+describe('isSamePassword', () => {
+  it('recognises a new password that equals the current one', () => {
+    const same = {status: 422, code: 'same_password', message: 'New password should be different from the old password.'};
+    expect(isSamePassword(same)).toBe(true);
+  });
+
+  it('does not confuse other refusals with it', () => {
+    expect(isSamePassword({status: 422, code: 'weak_password', message: 'Password is too weak'})).toBe(false);
   });
 });

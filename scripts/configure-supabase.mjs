@@ -8,10 +8,11 @@ const SETTINGS = {
   'auth': {
     site_url: '"http://localhost:3000"',
     additional_redirect_urls: '["http://localhost:3000/**"]',
+    minimum_password_length: '8',
   },
   'auth.email': {enable_signup: 'true', otp_length: '6', otp_expiry: '600'},
   'auth.email.template.magic_link': {
-    subject: '"Your Arcoin sign-in code"',
+    subject: '"Set your Arcoin password"',
     content_path: '"./supabase/templates/sign-in-code.html"',
   },
 };

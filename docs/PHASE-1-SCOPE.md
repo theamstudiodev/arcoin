@@ -19,7 +19,8 @@ If that works, Phase 1 is done. If it doesn't, nothing else matters.
 ## In scope
 
 ### 1. Auth and roles
-- Magic-link sign-in (Supabase Auth).
+- Email and password sign-in (Supabase Auth). A 6-digit emailed code sets the first password and resets a
+  forgotten one.
 - Two effective roles: **admin** (`principal`, `director`) and **staff** (everyone else).
 - RLS policies on every table from the first migration, not retrofitted.
 
@@ -81,9 +82,9 @@ on a phone in Phase 1.
   on iOS. Retry pending writes on `visibilitychange` instead.
 - iOS has no install prompt. Show a one-time card telling iOS users: Share → Add to Home Screen.
 - **Auth gotcha, solve it in week 1:** a magic link opens in Safari, but an installed PWA on iOS
-  has its own storage container, so the session can land in the wrong place. Use a **6-digit OTP
-  code** the user types inside the app, and set a long session (60–90 days) so they rarely
-  re-authenticate. Keep the magic link for desktop.
+  has its own storage container, so the session can land in the wrong place. Sign-in is **email and
+  password** typed inside the app; setting or resetting the password uses a **6-digit code** typed
+  inside the app — never a link. Set a long session (60–90 days) so they rarely re-authenticate.
 - Push notifications are **Phase 2**, not Phase 1 — but ship the manifest and service worker now
   so the install works and push can be switched on later without another install.
 

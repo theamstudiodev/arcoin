@@ -12,8 +12,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  // `next dev` compiles each route on its first visit, which can take several seconds.
-  expect: {timeout: 10_000},
+  // `next dev` compiles each route on its first visit, and a busy laptop can stretch one auth round trip to
+  // several seconds. Generous limits keep the suite honest about behaviour, not speed.
+  timeout: 60_000,
+  expect: {timeout: 20_000},
   globalSetup: './e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:3000',

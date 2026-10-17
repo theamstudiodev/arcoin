@@ -147,7 +147,7 @@
   }
 }
 /*
- * The blueprint: navy with a soft glow top-right, a fine 48px grid in pale blue-grey and a 240px grid in faint
+ * The blueprint: navy with a soft glow top-right, a fine 24px grid in pale blue-grey and a 120px grid in faint
  * lime, drifting slowly sideways. ONLY for the login page, the PWA splash and empty states — working screens stay
  * on the light background, because dense data reads better on light.
  */
@@ -159,11 +159,11 @@
     linear-gradient(rgba(201,214,229,0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(201,214,229,0.045) 1px, transparent 1px),
     radial-gradient(1400px 900px at 72% 28%, #0B2545 0%, #081C33 55%, #050F1E 100%);
-  background-size: 240px 240px, 240px 240px, 48px 48px, 48px 48px, 100% 100%;
-  animation: blueprint-drift 60s linear infinite;
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px, 100% 100%;
+  animation: blueprint-drift 30s linear infinite; /* 4px a second */
 }
 @keyframes blueprint-drift {
-  to { background-position: 240px 0, 240px 0, 240px 0, 240px 0, 0 0; }
+  to { background-position: 120px 0, 120px 0, 120px 0, 120px 0, 0 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bg-blueprint { animation: none; }

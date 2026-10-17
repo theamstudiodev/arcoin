@@ -21,17 +21,13 @@ export default function LoginPage() {
         <div
           className={`${CARD_TOKENS} rounded-lg border border-[rgba(201,214,229,0.22)] bg-navy-800/80 p-6 text-white backdrop-blur-md`}
         >
-          <div className="mb-6">
-            <h1 className="flex items-center gap-2.5 text-[28px] leading-none font-extrabold tracking-tight">
-              <span aria-hidden className="size-4 rounded-[3px] bg-lime-500" />
-              {APP_NAME}
-            </h1>
-            <p className="mt-2 text-[13px] text-[#C9D6E5]">AM Studio</p>
-          </div>
+          <h1 className="mb-7 flex items-center gap-2.5 text-[28px] leading-none font-extrabold tracking-tight">
+            <span aria-hidden className="size-4 rounded-[3px] bg-lime-500" />
+            {APP_NAME}
+          </h1>
           <LoginForm />
         </div>
       </div>
-      <p className="mt-8 text-xs text-[#C9D6E5]">{APP_NAME} — AM Studio internal tool</p>
     </main>
   );
 }

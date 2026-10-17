@@ -49,10 +49,12 @@ Staff could not sign in with it at all. Configure Resend as the sender:
 3. Supabase → `studesk-staging` → Authentication → Emails → SMTP settings → Enable custom SMTP:
    - Host `smtp.resend.com` · Port `465` · Username `resend` · Password: the Resend API key
    - Sender email `studesk@<verified-domain>` · Sender name `Studesk`
-4. Authentication → Emails → Templates → **Magic link**: subject `Your Arcoin sign-in code`,
+4. Authentication → Emails → Templates → **Magic link**: subject `Set your Arcoin password`,
    body: paste `supabase/templates/sign-in-code.html`. It contains `{{ .Token }}`, which turns the
-   magic link into a **6-digit code** — the one that works inside the installed iPhone app.
-5. Authentication → Providers → Email: keep it enabled; set the OTP expiry to `600` seconds.
+   magic link into a **6-digit code**. People sign in with email and password; the code only sets a
+   first password or resets a forgotten one, typed inside the app — so it works in the installed iPhone app.
+5. Authentication → Providers → Email: keep it enabled; set the OTP expiry to `600` seconds and the
+   minimum password length to `8`.
 6. Authentication → URL configuration: site URL `http://localhost:3000` for now.
 
 ---

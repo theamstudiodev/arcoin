@@ -133,7 +133,8 @@ Phase 3 swaps in the `capacity_calendar` table so approved leave reduces it.
 
 - **Next.js** (current major) App Router, React 19, TypeScript strict — in `apps/web`
 - **Tailwind 4** + shadcn/ui
-- **Supabase**: Postgres 17, Auth (6-digit email code), row-level security. Mumbai region.
+- **Supabase**: Postgres 17, Auth (email and password; a 6-digit emailed code sets the first password
+  and resets a forgotten one), row-level security. Mumbai region.
 - **SQL migrations** in `supabase/migrations/` are the schema's single source of truth
 - **supabase-js** with generated types (`apps/web/src/lib/database.types.ts`) for every query — so every
   user query runs under row-level security. **Do not add an ORM that connects to Postgres
