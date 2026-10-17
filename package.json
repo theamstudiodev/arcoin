@@ -2,7 +2,10 @@
   "name": "studesk",
   "private": true,
   "description": "AM Studio's project and capacity system — app, engine and database in one repository",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
@@ -15,5 +18,10 @@
     "db:test": "./scripts/test-db.sh",
     "db:types": "supabase gen types typescript --local > apps/web/src/lib/database.types.ts"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "shadcn": "^4.22.0"
+  }
 }
