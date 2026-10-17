@@ -198,6 +198,9 @@ Design the policies now so those slot in without rework.
 - Do not install a charting library. The timeline is a custom layout over a date scale; a chart
   library will be fought, not used.
 - Do not use `localStorage` for anything that must survive or be shared.
+- Do not turn off email confirmation (`enable_confirmations` in `supabase/config.toml`, *Confirm email* in the
+  dashboard). With it off, anyone who knows the email of a teammate who hasn't signed in yet can sign up as them
+  with a password and skip the emailed code. `apps/web/e2e/account-security.spec.ts` proves it stays closed.
 - Do not build an abstraction for a second org, a second branch or a plugin system. Carry
   `org_id` and stop there.
 

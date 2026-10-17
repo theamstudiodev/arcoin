@@ -49,12 +49,15 @@ Staff could not sign in with it at all. Configure Resend as the sender:
 3. Supabase → `studesk-staging` → Authentication → Emails → SMTP settings → Enable custom SMTP:
    - Host `smtp.resend.com` · Port `465` · Username `resend` · Password: the Resend API key
    - Sender email `studesk@<verified-domain>` · Sender name `Studesk`
-4. Authentication → Emails → Templates → **Magic link**: subject `Set your Arcoin password`,
-   body: paste `supabase/templates/sign-in-code.html`. It contains `{{ .Token }}`, which turns the
-   magic link into a **6-digit code**. People sign in with email and password; the code only sets a
+4. Authentication → Emails → Templates: give **Magic link** and **Confirm signup** the same subject,
+   `Set your Arcoin password`, and the same body: paste `supabase/templates/sign-in-code.html`. It contains
+   `{{ .Token }}`, which turns the link into a **6-digit code**. A brand-new account's first code comes in
+   *Confirm signup*, every later one in *Magic link*. People sign in with email and password; the code only sets a
    first password or resets a forgotten one, typed inside the app — so it works in the installed iPhone app.
-5. Authentication → Providers → Email: keep it enabled; set the OTP expiry to `600` seconds and the
-   minimum password length to `8`.
+5. Authentication → Providers → Email: keep it enabled, keep **Allow new users to sign up** on (the first code
+   creates the account) and leave **Confirm email** on. With Confirm email off, anyone who knows the email of a
+   teammate who hasn't signed in yet can sign up as them with a password of their own and skip the code.
+   Set the OTP expiry to `600` seconds and the minimum password length to `8`.
 6. Authentication → URL configuration: site URL `http://localhost:3000` for now.
 
 ---
@@ -193,7 +196,8 @@ of truth and means a restore can never resurrect an old version of a rule.
 - [ ] Ops Google account and `Studesk/backups` Drive folder — owned by AM Studio
 - [ ] GitHub org `am-studio`, private repo `studesk`, you added
 - [ ] Supabase org owned by AM Studio, `studesk-staging` **in Mumbai**
-- [ ] Resend domain verified, SMTP configured, 6-digit code template in place
+- [ ] Resend domain verified, SMTP configured, the 6-digit code in both the Magic link and Confirm signup
+      templates, Confirm email on
 - [ ] `supabase start` and `./scripts/test-db.sh` passing on your laptop
 - [ ] `supabase db push` to staging; real team inserted with real emails
 - [ ] CI green on the first push

@@ -10,8 +10,14 @@ const SETTINGS = {
     additional_redirect_urls: '["http://localhost:3000/**"]',
     minimum_password_length: '8',
   },
-  'auth.email': {enable_signup: 'true', otp_length: '6', otp_expiry: '600'},
+  // Confirmation stays on: off, anyone who knows a teammate's email could sign up as them with a password.
+  'auth.email': {enable_signup: 'true', enable_confirmations: 'true', otp_length: '6', otp_expiry: '600'},
+  // A returning person's code comes in the magic link email, a brand-new account's in the confirmation email.
   'auth.email.template.magic_link': {
+    subject: '"Set your Arcoin password"',
+    content_path: '"./supabase/templates/sign-in-code.html"',
+  },
+  'auth.email.template.confirmation': {
     subject: '"Set your Arcoin password"',
     content_path: '"./supabase/templates/sign-in-code.html"',
   },
