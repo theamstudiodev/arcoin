@@ -60,7 +60,7 @@ export default async function PeoplePage() {
 function PersonItem({person, canEdit}: {person: PersonRow; canEdit: boolean}) {
   return (
     <li
-      className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-3 md:py-0.5 ${COLUMNS} ${person.active ? '' : 'opacity-60'}`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2.5 md:py-0.5 ${COLUMNS} ${person.active ? '' : 'opacity-60'}`}
     >
       <span className="min-w-0 flex-1 truncate text-[15px] font-semibold md:text-sm md:font-medium">{person.name}</span>
       <span className="order-last w-full text-[13px] text-muted-foreground md:order-none md:w-auto md:text-sm md:text-foreground">

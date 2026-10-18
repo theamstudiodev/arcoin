@@ -41,7 +41,13 @@ export function PersonDialog({person}: {person?: PersonRow}) {
       {person ? (
         <DialogTrigger
           render={
-            <Button variant="ghost" size="icon" aria-label={title} className="size-11 text-muted-foreground md:size-8" />
+            // 44px to tap on a phone, overlapping the row's padding so the row stays compact.
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={title}
+              className="-my-1.5 size-11 text-muted-foreground md:my-0 md:size-8"
+            />
           }
         >
           <PencilIcon />
