@@ -11,6 +11,29 @@ Target: `arcoin-staging` (South Asia, Mumbai). Nothing here touches production.
 
 ---
 
+## Where staging stands today (2026-10-18)
+
+Staging runs on **Supabase's built-in email service**, with no custom sending domain and no SMTP. That is a
+deliberate, temporary choice, and it has three consequences you should read before planning a staging trial:
+
+1. **Built-in email sends 2 messages an hour, and only to addresses on your Supabase team.** Your staff
+   cannot receive a sign-in code at all. This is the blocker that matters; nothing else gets round it.
+2. **Authentication email templates cannot be customised without SMTP** — Supabase's dashboard says so
+   outright. So the Arcoin six-digit emails cannot be deployed, and staging sends Supabase's default
+   templates, which contain a **link** rather than a code.
+3. **A link cannot finish onboarding in this app.** The code step expects six typed digits and `/login` has
+   no token handler, so a default template email is a dead end — and inside an installed iPhone app the link
+   would open Safari's separate cookie jar anyway.
+
+The app is **not** being changed to accept link-based email. Fixing this means custom SMTP (Resend's free
+tier is 3,000 emails a month), and until then staging is usable only by addresses on the Supabase team.
+
+Already correct on staging, confirmed by `supabase config diff`: email confirmation, secure email change,
+sign-ups allowed, anonymous sign-ins off, manual linking off, OTP length 6, OTP expiry 600, minimum
+password length 8, email resend interval 60s.
+
+---
+
 ## A. Before you push anything
 
 - [ ] **Confirm the project ref really is staging.** `supabase projects list` and match the ref against the
@@ -48,13 +71,21 @@ do for you, because the Resend key is a secret.
 
 ## C. Templates — all three carry the code, never a link
 
-A link opens Safari's own cookie jar and will not sign anyone into the installed app. Paste
-`supabase/templates/sign-in-code.html` into each; subject `Set your Arcoin password`.
+**Blocked until section B is done.** Supabase requires custom SMTP before authentication email templates can
+be edited, so while staging is on built-in email these cannot be applied. `supabase config diff` lists the
+three subjects as the only outstanding *declared* differences, which is deliberate: it keeps the blocker
+visible rather than papering over it. Do not work around this by changing the app to accept link emails.
+
+Once SMTP exists, paste `supabase/templates/sign-in-code.html` into each; subject `Set your Arcoin password`.
 
 - [ ] **Magic link** — the code a returning person gets
 - [ ] **Confirm signup** — *the one a brand-new person gets first*
 - [ ] **Reset password** — *what anyone asking Supabase directly receives*
 - [ ] Pass: each preview shows a 6-digit code and **no `{{ .ConfirmationURL }}`**
+
+One risk to expect when you do push them: the CLI sends auth configuration as a single update, so if the API
+rejects the template fields for want of SMTP, the whole auth change may fail with it. Set SMTP up first and
+the question does not arise.
 
 ## D. Auth settings — every value that matters
 
@@ -68,6 +99,7 @@ A link opens Safari's own cookie jar and will not sign anyone into the installed
 | **Secure email change** | **ON** | If off, anyone holding a session can change the account's email to one they control. The People row keeps the old address, so `auth_user_id` stays linked while the sign-in address becomes theirs — a full takeover. |
 | **Anonymous sign-ins** | **OFF** | If on, anyone gets a session for free. They would read nothing, but it should not be available. |
 | **Manual linking** | **OFF** | If on, an account can attach another identity to itself. |
+| **Email resend interval** | **60 seconds** | Local uses 1 second so the tests can ask for several codes in a row. A hosted project must make someone wait, or a teammate's address can be used to bomb their inbox and leave every earlier code stale. |
 | Leaked password protection | ON if offered | Rejects passwords found in known breaches. Free to enable. |
 | Site URL | the staging URL, **https** | |
 | Redirect allow-list | matches the site URL | |
@@ -78,22 +110,43 @@ A link opens Safari's own cookie jar and will not sign anyone into the installed
 
 ## E. What is automatic, and what needs the dashboard
 
-`supabase config push` sends the properties `supabase/config.toml` declares to the linked project, prompting
-per change. `supabase config diff` previews it without writing. So most of section D need not be typed into
-the dashboard at all:
+`supabase/config.toml` is read by two different things: `supabase start` builds the local Docker stack from
+it, and `supabase config push` treats it as the settings a hosted project ought to have. So anything
+declared for local convenience is also an instruction to change staging. `scripts/configure-supabase.mjs`
+keeps the two apart with three rules:
+
+| Rule | Meaning |
+|---|---|
+| `SETTINGS` | What Arcoin genuinely controls and wants identical everywhere: email confirmation, secure email change, sign-ups, OTP length and expiry, minimum password length, anonymous sign-ins, manual linking, the templates. |
+| `UNDECLARED` | What belongs to whoever runs the project, **commented out** so a push cannot carry it: the redirect allow-list, MFA, pooler capacity, vector storage. `config push` leaves undeclared keys alone, and local falls back to the CLI defaults — the same values those lines held. |
+| `REMOTES` | The one setting that must differ: the email resend interval. `[remotes.staging]` pins it to `1m0s` for `aiaxzemsbrsghlimfzpk` while local keeps `1s`. |
+
+A `[remotes.<name>]` block applies **only while its `project_id` matches the linked project.** So:
+
+> ⚠️ **Any new hosted project needs its own `[remotes.…]` block before its first `config push`.** Without
+> one, base values apply, and a push would set the email resend interval to **1 second**. When you create
+> `arcoin-prod`, copy the staging block and change the `project_id` first.
 
 | | How |
 |---|---|
-| Confirm email, sign-ups allowed, OTP length, OTP expiry, minimum password length, secure email change, anonymous sign-ins, manual linking, site URL, redirect allow-list, all three email templates | **`supabase config diff` then `supabase config push`** — these are declared in `config.toml` |
-| SMTP host, port, user, password, sender | **dashboard only** — the Resend key is a secret and is not in `config.toml` |
+| Confirm email, sign-ups allowed, OTP length, OTP expiry, minimum password length, secure email change, anonymous sign-ins, manual linking, site URL | **`supabase config diff` then `supabase config push`** |
+| Email templates | declared, but **blocked without SMTP** — section C |
+| SMTP host, port, user, password, sender | **dashboard only** — the key is a secret, so it is not in `config.toml` |
 | Leaked password protection | **dashboard only** |
-| Resend domain, SPF, DKIM, DMARC | **Resend and your DNS** |
+| Redirect allow-list, MFA, pooler capacity, vector storage | **dashboard only, on purpose** — undeclared so a push cannot touch them |
+| Sending domain, SPF, DKIM, DMARC | **Resend and your DNS** |
 | Keys, connection strings, GitHub secrets, hosting env vars | **dashboard, then copied by hand** |
 
-- [ ] **`supabase config diff` run and read before `config push`.** Pass: the only differences are the ones
+- [ ] **Verify the linked project before every remote operation.** `supabase projects list`, and match the
+      ref to `arcoin-staging`. A ref from a config file is not verification.
+- [ ] **`supabase config diff` run and read before any `config push`.** Pass: the only differences are ones
       you intend. Anything unexpected means the dashboard was changed by hand at some point.
-- [ ] After pushing, **re-read section D in the dashboard anyway.** `config push` leaves undeclared
-      properties alone, so a setting nobody declared can still be wrong.
+- [ ] After pushing, **re-read section D in the dashboard anyway.** Undeclared properties are left alone, so
+      a setting nobody declared can still be wrong.
+
+**Site URL is a known gap.** Staging's is `http://localhost:3000`, which `config.toml` also declares, so it
+raises no difference. Harmless while auth is code-based, but it must become the staging HTTPS address once
+hosting exists — and at that point it belongs in the `[remotes.staging]` block, not in the base settings.
 
 ## F. Push the schema and check the rules landed
 

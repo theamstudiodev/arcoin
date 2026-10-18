@@ -199,6 +199,11 @@ Design the policies now so those slot in without rework.
 - Do not install a charting library. The timeline is a custom layout over a date scale; a chart
   library will be fought, not used.
 - Do not use `localStorage` for anything that must survive or be shared.
+- Do not declare a setting in `supabase/config.toml` that only local needs. The file drives `supabase start`
+  **and** `supabase config push`, so a local convenience is also an instruction to change staging.
+  `scripts/configure-supabase.mjs` holds the three rules (SETTINGS / UNDECLARED / REMOTES) and
+  `docs/STAGING-VALIDATION.md` §E explains them. A new hosted project needs its own `[remotes.…]` block
+  before its first push.
 - Do not turn off email confirmation (`enable_confirmations` in `supabase/config.toml`, *Confirm email* in the
   dashboard). With it off, anyone who knows the email of a teammate who hasn't signed in yet can sign up as them
   with a password and skip the emailed code. `apps/web/e2e/account-security.spec.ts` proves it stays closed.
