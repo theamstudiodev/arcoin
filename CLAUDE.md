@@ -131,7 +131,8 @@ Phase 3 swaps in the `capacity_calendar` table so approved leave reduces it.
 
 ## Stack
 
-- **Next.js** (current major) App Router, React 19, TypeScript strict — in `apps/web`
+- **Next.js** (current major) App Router, React 19, TypeScript strict — in `apps/web`. Next 16 calls middleware
+  *proxy*: the session refresh lives in `apps/web/src/proxy.ts`.
 - **Tailwind 4** + shadcn/ui
 - **Supabase**: Postgres 17, Auth (email and password; a 6-digit emailed code sets the first password
   and resets a forgotten one), row-level security. Mumbai region.
@@ -223,4 +224,5 @@ supabase migration new <name>  # never edit a migration that has been applied an
 ./scripts/test-db.sh           # access tests — must pass before any push
 npm run db:types               # regenerate apps/web/src/lib/database.types.ts after any migration
 npm run dev / npm test / npm run typecheck
+npm run test:e2e               # Playwright vs local Supabase + Mailpit (supabase start first)
 ```

@@ -37,4 +37,5 @@ scripts/
 ```bash
 ./scripts/bootstrap.sh        # sets up everything, verifying each step; safe to re-run
 npm run dev                   # http://localhost:3000
+npm run test:e2e              # browser tests against local Supabase + Mailpit (supabase start first)
 ```
