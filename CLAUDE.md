@@ -213,6 +213,8 @@ Design the policies now so those slot in without rework.
   raises error `42501` with a readable message. Show that message; don't pre-check it in React.
 - `projects.tier_since` updates itself on every tier change.
 - Sign-in is an allowlist: an email not in `people` cannot create an account (trigger on `auth.users`).
+- An account holds no password until its email is verified, so registering a teammate's address first gains
+  nothing. Never let a password reach a row with `email_confirmed_at is null`.
 - Every change to people, projects, packages, tasks and settings lands in `audit_log`.
 
 ## Commands

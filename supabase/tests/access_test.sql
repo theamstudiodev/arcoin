@@ -46,6 +46,41 @@ do $$ begin
   end;
 end $$;
 
+-- A work email is not a secret. Until someone proves they receive it, the account holds no password —
+-- so a password chosen by whoever registered the address first can never sign anyone in.
+do $$
+declare uid uuid := '00000000-0000-4000-e000-0000000000c1';
+begin
+  insert into auth.users (id, email, encrypted_password)
+  values (uid, 'prapthi@amstudio.test', 'hash-of-someone-elses-password');
+  if (select encrypted_password from auth.users where id = uid) is not null then
+    raise exception 'FAIL: a password was kept on an address nobody has proved they receive';
+  end if;
+  raise notice 'ok  1c · a password set before the email is verified is not kept';
+
+  update auth.users set encrypted_password = 'hash-of-someone-elses-password' where id = uid;
+  if (select encrypted_password from auth.users where id = uid) is not null then
+    raise exception 'FAIL: a password could be added to an unverified account';
+  end if;
+  raise notice 'ok  1d · a password cannot be added while the email is unverified';
+
+  update auth.users set email_confirmed_at = now() where id = uid;
+  if (select encrypted_password from auth.users where id = uid) is not null then
+    raise exception 'FAIL: verifying the email revived a password chosen before it';
+  end if;
+  raise notice 'ok  1e · verifying the email does not revive an earlier password';
+
+  update auth.users set encrypted_password = 'hash-of-their-own-password' where id = uid;
+  if (select encrypted_password from auth.users where id = uid) <> 'hash-of-their-own-password' then
+    raise exception 'FAIL: a verified person could not set their own password';
+  end if;
+  update auth.users set encrypted_password = 'hash-of-a-reset-password' where id = uid;
+  if (select encrypted_password from auth.users where id = uid) <> 'hash-of-a-reset-password' then
+    raise exception 'FAIL: a verified person could not reset their password';
+  end if;
+  raise notice 'ok  1f · a verified person sets and resets their own password';
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- 2. Anonymous visitors see nothing
 -- ---------------------------------------------------------------------------

@@ -140,10 +140,9 @@ insert into public.people (org_id, email, name, role, capacity, sort_order) valu
   ('<org-id>', '<prapthi-email>', 'Ar. Prapthi', 'junior',    1,    7);
 ```
 
-Straight after this insert, have Asif and Athiq set their passwords, then everyone else, before the address is
-shared any wider. Until a database trigger closes it, one gap remains: someone who signs up first with a teammate's
-email can sign in as them in the moment between that teammate's code being accepted and their new password being
-saved. An account whose password is already set can't be claimed that way.
+Everyone can then set their password whenever suits them, in any order. An account holds no password until
+someone proves they receive the email, so registering a teammate's address first gains nothing — see
+`supabase/migrations/20261018050438_password_needs_verified_email.sql`.
 
 From then on, people are added through the app's People screen. Projects come in through the import
 script you'll write in week 6 from the studio's list of 50.

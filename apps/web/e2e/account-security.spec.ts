@@ -11,9 +11,9 @@ import {AM_STUDIO, addTeamMember, sql} from './helpers/db';
 import {mailpitIds, waitForCode} from './helpers/mailpit';
 
 // Someone who knows a teammate's work email, calling Supabase directly with the public key every browser gets.
-// They get no session and no records until the teammate types the code emailed to them. One gap remains: a password
-// set by someone who signed up first works from the moment the teammate's code is accepted until the teammate's new
-// password is saved, a few milliseconds later inside setPassword.
+// They get no session and no records until the teammate types the code emailed to them — and no password they choose
+// is ever kept, because an account holds none until its email is verified (migration
+// 20261018050438_password_needs_verified_email).
 const ATTACKER_PASSWORD = 'someone-elses-password';
 
 // Next renders its own role="alert" route announcer outside <main>.
@@ -24,6 +24,19 @@ function newTeammate(label: string): string {
   const email = `e2e-${label}-${Date.now()}@amstudio.test`;
   addTeamMember(email, `E2E ${label}`);
   return email;
+}
+
+/** Whether Supabase is holding a password for this account at all. */
+function hasStoredPassword(email: string): boolean {
+  return sql(`select encrypted_password is not null from auth.users where lower(email) = '${email}'`) === 't';
+}
+
+/** Proves the address with the code Supabase emailed, and stops there — no password saved yet. */
+async function verifyOnly(email: string, code: string) {
+  const person = publicClient();
+  const {error} = await person.auth.verifyOtp({email, token: code, type: 'email'});
+  expect(error).toBeNull();
+  return person;
 }
 
 /** The one-time codes Supabase is waiting for on this account, e.g. "confirmation_token". */
@@ -43,8 +56,10 @@ test("signing up with a teammate's email signs no one in", async () => {
   const {data} = await attacker.auth.signUp({email, password: ATTACKER_PASSWORD});
   expect(data.session).toBeNull();
 
+  // invalid_credentials, not email_not_confirmed: the password was never kept at all. That also stops this
+  // being a way to find out which addresses are on the team list.
   const {error} = await attacker.auth.signInWithPassword({email, password: ATTACKER_PASSWORD});
-  expect(error?.code).toBe('email_not_confirmed');
+  expect(error?.code).toBe('invalid_credentials');
 });
 
 test('a sign-up without the code reads no team records', async () => {
@@ -172,6 +187,115 @@ test('asking for a code again within the minute still opens the code step', asyn
   await expect(alert(page)).toHaveCount(0);
 
   await setPasswordWithCode(page, code, 'again-password-7');
+});
+
+// A teammate's email is not a secret: it is on their drawings and in every client's inbox. These four prove that
+// knowing it buys nothing, because Supabase holds no password for an address until someone proves they receive it.
+
+test('an account holds no password until its email is verified', async () => {
+  const email = newTeammate('unverified');
+
+  await publicClient().auth.signUp({email, password: ATTACKER_PASSWORD});
+
+  expect(hasStoredPassword(email), 'a password was kept on an address nobody has proved they receive').toBe(false);
+});
+
+test('nobody else gets a session in the gap between the code and the new password', async () => {
+  const email = newTeammate('gap');
+  const before = await mailpitIds(email);
+  await publicClient().auth.signUp({email, password: ATTACKER_PASSWORD});
+
+  // The code goes to the teammate, who types it in. Their password is not saved for another moment yet.
+  const {code} = await waitForCode(email, before);
+  const person = await verifyOnly(email, code);
+
+  const inTheGap = await publicClient().auth.signInWithPassword({email, password: ATTACKER_PASSWORD});
+  expect(inTheGap.data.session, 'a password chosen before the email was verified opened a session').toBeNull();
+  expect(inTheGap.error?.code).toBe('invalid_credentials');
+
+  // The teammate still finishes normally from that same verified session.
+  expect((await person.auth.updateUser({password: 'my-own-password-9'})).error).toBeNull();
+  await signInWithPassword(email, 'my-own-password-9');
+});
+
+test("a failed password save doesn't leave an earlier password working", async () => {
+  const email = newTeammate('failed');
+  const before = await mailpitIds(email);
+  await publicClient().auth.signUp({email, password: ATTACKER_PASSWORD});
+
+  const {code} = await waitForCode(email, before);
+  const person = await verifyOnly(email, code);
+
+  // Their save fails — a short password here, a dropped connection in the studio. The gap never closes.
+  expect((await person.auth.updateUser({password: 'short'})).error?.code).toBe('weak_password');
+
+  const later = await publicClient().auth.signInWithPassword({email, password: ATTACKER_PASSWORD});
+  expect(later.data.session, 'an unfinished sign-up left someone else holding a working password').toBeNull();
+});
+
+test('a burst of sign-in attempts around the moment of verification gets nobody in', async () => {
+  const email = newTeammate('race');
+  const before = await mailpitIds(email);
+  await publicClient().auth.signUp({email, password: ATTACKER_PASSWORD});
+  const {code} = await waitForCode(email, before);
+
+  // The teammate's verification and five password attempts leave at the same instant.
+  const person = publicClient();
+  const [verified, ...attempts] = await Promise.all([
+    person.auth.verifyOtp({email, token: code, type: 'email'}),
+    ...Array.from({length: 5}, () => publicClient().auth.signInWithPassword({email, password: ATTACKER_PASSWORD})),
+  ]);
+  expect(verified.error).toBeNull();
+  for (const [i, attempt] of attempts.entries()) {
+    expect(attempt.data.session, `racing attempt ${i + 1} got a session`).toBeNull();
+  }
+  expect((await publicClient().auth.signInWithPassword({email, password: ATTACKER_PASSWORD})).data.session).toBeNull();
+
+  // And the teammate still finishes from that same verified session.
+  expect((await person.auth.updateUser({password: 'my-own-password-11'})).error).toBeNull();
+  await signInWithPassword(email, 'my-own-password-11');
+});
+
+test("an existing team member's password is never cleared", async () => {
+  for (const email of ['athiq@amstudio.test', 'bushra@amstudio.test']) {
+    expect(hasStoredPassword(email), email).toBe(true);
+  }
+  // Supabase writes to these rows on every sign-in and token refresh. None of that may touch the password.
+  sql(`update auth.users set last_sign_in_at = now(), updated_at = now() where lower(email) = 'athiq@amstudio.test'`);
+  expect(hasStoredPassword('athiq@amstudio.test')).toBe(true);
+  await signInWithPassword('athiq@amstudio.test');
+});
+
+test('a password reset works even after an earlier save failed', async ({page}) => {
+  const email = newTeammate('retry');
+  const before = await mailpitIds(email);
+  await publicClient().auth.signUp({email, password: ATTACKER_PASSWORD});
+  const {code} = await waitForCode(email, before);
+  const person = await verifyOnly(email, code);
+
+  // Their first attempt fails, leaving a verified account holding no password at all.
+  expect((await person.auth.updateUser({password: 'short'})).error?.code).toBe('weak_password');
+  expect(hasStoredPassword(email)).toBe(false);
+
+  // They start again from the login screen — the account is not stuck — and nobody else got in meanwhile.
+  await waitOutEmailLimit(page);
+  await setPasswordThroughUi(page, email, 'second-try-password-12');
+  await signInWithPassword(email, 'second-try-password-12');
+  expect((await publicClient().auth.signInWithPassword({email, password: ATTACKER_PASSWORD})).data.session).toBeNull();
+});
+
+test('a forgotten password is replaced, and the old one stops working', async ({page}) => {
+  const email = newTeammate('forgot');
+  await ensurePassword(email, 'first-password-10');
+  expect(hasStoredPassword(email)).toBe(true);
+
+  await waitOutEmailLimit(page);
+  await setPasswordThroughUi(page, email, 'second-password-10');
+
+  await signInWithPassword(email, 'second-password-10');
+  expect((await publicClient().auth.signInWithPassword({email, password: 'first-password-10'})).error?.code).toBe(
+    'invalid_credentials',
+  );
 });
 
 test('a reset asked for straight from Supabase still sends a code, never a link', async () => {
