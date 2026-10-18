@@ -223,7 +223,8 @@ Design the policies now so those slot in without rework.
 supabase start                 # local stack: API :54321 · DB :54322 · Studio :54323 · Mailpit :54324
 supabase db reset              # rebuild local DB from migrations + seed
 supabase migration new <name>  # never edit a migration that has been applied anywhere
-./scripts/test-db.sh           # access tests — must pass before any push
+./scripts/test-db.sh           # access tests — must pass before any push. Local Postgres only; it refuses anything else
+./scripts/test-guards.sh       # proves the database scripts refuse a non-local or non-empty target
 npm run db:types               # regenerate apps/web/src/lib/database.types.ts after any migration
 npm run dev / npm test / npm run typecheck
 npm run test:e2e               # Playwright vs local Supabase + Mailpit (supabase start first)

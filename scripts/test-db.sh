@@ -9,6 +9,22 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ADMIN_URL="${ADMIN_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+
+# This script creates a database and drops it again, so it must never be pointed at a shared one. Take the
+# host out of the URL: drop the scheme, then everything up to the last @ (a password may contain one), then
+# stop at the port, path or query.
+host="${ADMIN_URL#*://}"
+host="${host##*@}"
+host="${host%%[:/?]*}"
+case "$host" in
+  127.0.0.1 | localhost | ::1 | '[::1]') ;;
+  *)
+    echo "Refusing to run: test-db.sh creates and drops a database, so it runs only against a local" >&2
+    echo "Postgres. ADMIN_URL points at '${host:-an address it could not read}'." >&2
+    exit 1
+    ;;
+esac
+
 DB="studesk_test_$$"
 # swap the database name in the URL, keeping any ?query parameters
 base="${ADMIN_URL%%\?*}"; query="${ADMIN_URL#"$base"}"
