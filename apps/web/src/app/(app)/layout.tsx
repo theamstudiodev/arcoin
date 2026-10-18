@@ -3,6 +3,11 @@ import type {ReactNode} from 'react';
 import {TopBar} from '@/app/(app)/top-bar';
 import {getViewer} from '@/lib/me';
 
+// Every screen here is one person's view of the studio, so none of them may be built ahead of time. Without
+// this, `next build` tries to prerender them and reads Supabase's keys from an environment that has none —
+// which is how CI builds, with no .env.local.
+export const dynamic = 'force-dynamic';
+
 // Every working screen: signed in, on the team, under the top bar, on the light background.
 export default async function AppLayout({children}: {children: ReactNode}) {
   const {me} = await getViewer();

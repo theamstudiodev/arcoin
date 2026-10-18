@@ -12,6 +12,11 @@ const CARD_TOKENS =
 // L-shaped crop marks just outside the card's corners, like the corners of a drawing sheet.
 const MARK = 'pointer-events-none absolute size-[26px] border-lime-500/45';
 
+// This page reads the visitor's session to decide where they belong, so it is never built ahead of time. The
+// lookup below swallows its own errors, which would otherwise let `next build` prerender the page as plain
+// HTML — and a served snapshot would stop redirecting signed-in people and stop showing the refusal.
+export const dynamic = 'force-dynamic';
+
 export default async function LoginPage() {
   // Signed in and on the team: straight to work. Signed in but no longer on the team: say so here, rather than send
   // them round between the two screens. If the lookup itself fails, show the form; signing in reports its own errors.
