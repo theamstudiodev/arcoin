@@ -1,7 +1,9 @@
+import {PersonDialog} from '@/app/(app)/people/person-dialog';
 import {Badge} from '@/components/ui/badge';
 import {formatCapacity} from '@/lib/format';
+import {getViewer} from '@/lib/me';
 import {PERSON_COLUMNS, type PersonRow} from '@/lib/people';
-import {ROLE_LABELS} from '@/lib/roles';
+import {isAdmin, ROLE_LABELS} from '@/lib/roles';
 import {createClient} from '@/lib/supabase/server';
 
 // Phone: name over role, time on production and status at the right. Desktop: one 36px row per person, in columns.
@@ -10,6 +12,10 @@ const COLUMNS =
 const LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
 
 export default async function PeoplePage() {
+  const {me} = await getViewer();
+  // Admins get the add and edit controls. The database refuses anyone else's changes either way.
+  const canEdit = me !== null && isAdmin(me.role);
+
   const supabase = await createClient();
   const {data: people, error} = await supabase
     .from('people')
@@ -20,11 +26,18 @@ export default async function PeoplePage() {
 
   return (
     <>
-      <div className="mb-4 flex items-baseline gap-3">
-        <h1 className="text-[26px] font-semibold">People</h1>
-        <p className="text-[13px] text-muted-foreground">
-          {people.length} {people.length === 1 ? 'person' : 'people'}
-        </p>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-[26px] font-semibold">People</h1>
+          <p className="text-[13px] text-muted-foreground">
+            {people.length} {people.length === 1 ? 'person' : 'people'}
+          </p>
+        </div>
+        {canEdit && (
+          <div className="ml-auto">
+            <PersonDialog />
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -36,7 +49,7 @@ export default async function PeoplePage() {
         </div>
         <ul className="divide-y">
           {people.map((person) => (
-            <PersonItem key={person.id} person={person} />
+            <PersonItem key={person.id} person={person} canEdit={canEdit} />
           ))}
         </ul>
       </div>
@@ -44,10 +57,10 @@ export default async function PeoplePage() {
   );
 }
 
-function PersonItem({person}: {person: PersonRow}) {
+function PersonItem({person, canEdit}: {person: PersonRow; canEdit: boolean}) {
   return (
     <li
-      className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-3 md:py-1.5 ${COLUMNS} ${person.active ? '' : 'opacity-60'}`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-3 md:py-0.5 ${COLUMNS} ${person.active ? '' : 'opacity-60'}`}
     >
       <span className="min-w-0 flex-1 truncate text-[15px] font-semibold md:text-sm md:font-medium">{person.name}</span>
       <span className="order-last w-full text-[13px] text-muted-foreground md:order-none md:w-auto md:text-sm md:text-foreground">
@@ -64,6 +77,7 @@ function PersonItem({person}: {person: PersonRow}) {
           Inactive
         </Badge>
       )}
+      {canEdit && <PersonDialog person={person} />}
     </li>
   );
 }
