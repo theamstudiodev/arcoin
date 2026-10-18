@@ -425,3 +425,8 @@ subject = "Set your Arcoin password"
 [auth.email.template.confirmation]
 content_path = "./supabase/templates/sign-in-code.html"
 subject = "Set your Arcoin password"
+
+# Anyone can ask Supabase to send someone a reset email. It carries the same code too, never a link.
+[auth.email.template.recovery]
+content_path = "./supabase/templates/sign-in-code.html"
+subject = "Set your Arcoin password"

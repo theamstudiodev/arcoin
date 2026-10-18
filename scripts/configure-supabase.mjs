@@ -12,12 +12,17 @@ const SETTINGS = {
   },
   // Confirmation stays on: off, anyone who knows a teammate's email could sign up as them with a password.
   'auth.email': {enable_signup: 'true', enable_confirmations: 'true', otp_length: '6', otp_expiry: '600'},
-  // A returning person's code comes in the magic link email, a brand-new account's in the confirmation email.
+  // A returning person's code comes in the magic link email, a brand-new account's in the confirmation email, and a
+  // reset anyone asks Supabase for directly in the recovery email. All three carry the code, never a link.
   'auth.email.template.magic_link': {
     subject: '"Set your Arcoin password"',
     content_path: '"./supabase/templates/sign-in-code.html"',
   },
   'auth.email.template.confirmation': {
+    subject: '"Set your Arcoin password"',
+    content_path: '"./supabase/templates/sign-in-code.html"',
+  },
+  'auth.email.template.recovery': {
     subject: '"Set your Arcoin password"',
     content_path: '"./supabase/templates/sign-in-code.html"',
   },

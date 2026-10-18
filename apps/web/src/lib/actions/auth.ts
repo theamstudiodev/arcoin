@@ -3,6 +3,7 @@
 import {redirect, RedirectType} from 'next/navigation';
 import {type ActionResult, invalidInput} from '@/lib/actions/result';
 import {
+  isCodeRecentlySent,
   isSamePassword,
   sendCodeErrorMessage,
   setPasswordErrorMessage,
@@ -36,17 +37,19 @@ export async function signIn(input: SignInInput): Promise<ActionResult> {
 
 /**
  * Emails a 6-digit code for setting a password — the first one, or a new one when it's forgotten. The first time,
- * this creates the account; the database refuses any email that isn't on the team list.
+ * this creates the account; the database refuses any email that isn't on the team list. `recent` means no new email
+ * went out because one did less than a minute ago; its code still works.
  */
-export async function sendCode(input: SendCodeInput): Promise<ActionResult<{email: string}>> {
+export async function sendCode(input: SendCodeInput): Promise<ActionResult<{email: string; recent: boolean}>> {
   const parsed = sendCodeSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error);
 
   const {email} = parsed.data;
   const supabase = await createClient();
   const {error} = await supabase.auth.signInWithOtp({email, options: {shouldCreateUser: true}});
+  if (error && isCodeRecentlySent(error)) return {ok: true, data: {email, recent: true}};
   if (error) return {ok: false, error: sendCodeErrorMessage(error)};
-  return {ok: true, data: {email}};
+  return {ok: true, data: {email, recent: false}};
 }
 
 /** Checks the emailed code, saves the new password and opens People, signed in. */

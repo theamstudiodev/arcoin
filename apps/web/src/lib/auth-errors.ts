@@ -20,6 +20,14 @@ function isAllowlistRefusal(error: AuthErrorLike): boolean {
   return error.status === 500 && error.message === 'Database error saving new user';
 }
 
+/**
+ * Supabase sends one email per address per minute (once a second locally) and refuses a second within it. The code
+ * that went out moments ago still works, so the screen should open the code step rather than show an error.
+ */
+export function isCodeRecentlySent(error: AuthErrorLike): boolean {
+  return error.status === 429 && /only request this after/i.test(error.message);
+}
+
 export function sendCodeErrorMessage(error: AuthErrorLike): string {
   if (isAllowlistRefusal(error)) return NOT_ON_TEAM;
   if (error.status === 429) return 'Too many codes asked for. Wait a minute, then try again.';

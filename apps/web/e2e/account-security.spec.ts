@@ -11,7 +11,9 @@ import {AM_STUDIO, addTeamMember, sql} from './helpers/db';
 import {mailpitIds, waitForCode} from './helpers/mailpit';
 
 // Someone who knows a teammate's work email, calling Supabase directly with the public key every browser gets.
-// Whatever they try, only the code emailed to the teammate signs anyone in to that account.
+// They get no session and no records until the teammate types the code emailed to them. One gap remains: a password
+// set by someone who signed up first works from the moment the teammate's code is accepted until the teammate's new
+// password is saved, a few milliseconds later inside setPassword.
 const ATTACKER_PASSWORD = 'someone-elses-password';
 
 // Next renders its own role="alert" route announcer outside <main>.
@@ -134,7 +136,7 @@ test('an inactive person reads no team records', async () => {
   expect(insert.error?.code).toBe('42501');
 });
 
-test("an inactive person can't start setting a password", async ({page}) => {
+test("an inactive person who never joined can't create an account", async ({page}) => {
   const email = newTeammate('inactive');
   sql(`update public.people set active = false where email = '${email}'`);
 
@@ -145,4 +147,43 @@ test("an inactive person can't start setting a password", async ({page}) => {
 
   await expect(alert(page)).toHaveText("This email isn't on the AM Studio team list. Ask Athiq to add you.");
   await expect(page.getByLabel('Code')).toHaveCount(0);
+});
+
+test('asking for a code again within the minute still opens the code step', async ({page}) => {
+  const email = newTeammate('again');
+  await ensurePassword(email, 'again-password-6');
+  // A code went out moments ago: they asked on another device, or someone else asked for them.
+  const before = await mailpitIds(email);
+  await publicClient().auth.signInWithOtp({email, options: {shouldCreateUser: true}});
+  const {code} = await waitForCode(email, before);
+  // Hosted Supabase sends one email per address per minute (locally, per second). Hold that window open.
+  sql(`update auth.users set recovery_sent_at = now() + interval '1 minute' where email = '${email}'`);
+
+  await page.goto('/login');
+  await page.getByRole('button', {name: 'Set a password'}).click();
+  await page.getByLabel('Email').fill(email);
+  await page.getByRole('button', {name: 'Send code'}).click();
+  const recent = 'A code was sent to this email less than a minute ago. Use the newest one.';
+  await expect(page.getByRole('main').getByRole('status')).toHaveText(recent);
+
+  // Asking again inside the window says the same, rather than refusing.
+  await page.getByRole('button', {name: 'Send a new code'}).click();
+  await expect(page.getByRole('main').getByRole('status')).toHaveText(recent);
+  await expect(alert(page)).toHaveCount(0);
+
+  await setPasswordWithCode(page, code, 'again-password-7');
+});
+
+test('a reset asked for straight from Supabase still sends a code, never a link', async () => {
+  const email = newTeammate('recover');
+  await ensurePassword(email, 'recover-password-8');
+
+  const before = await mailpitIds(email);
+  await publicClient().auth.resetPasswordForEmail(email);
+  const {code, subject} = await waitForCode(email, before);
+  expect(subject).toBe('Set your Arcoin password');
+
+  // The same check the app's code step makes.
+  const {error} = await publicClient().auth.verifyOtp({email, token: code, type: 'email'});
+  expect(error).toBeNull();
 });

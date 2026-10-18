@@ -94,3 +94,18 @@ test('the blueprint drifts, and stands still for reduced motion', async ({page})
   await page.reload();
   await expect(page.locator('.bg-blueprint')).toHaveCSS('animation-name', 'none');
 });
+
+test('the small controls on the sign-in card are easy to tap', async ({page}) => {
+  await page.goto('/login');
+  // 44px is the smallest target a thumb hits reliably. The extra area is invisible, so the card looks the same.
+  const show = (await page.getByRole('button', {name: 'Show password'}).boundingBox())!;
+  await page.touchscreen.tap(show.x + show.width / 2, show.y - 10);
+  await expect(page.getByRole('button', {name: 'Hide password'})).toBeVisible();
+
+  const setPassword = (await page.getByRole('button', {name: 'Set a password'}).boundingBox())!;
+  await page.touchscreen.tap(setPassword.x + setPassword.width / 2, setPassword.y + setPassword.height + 10);
+  await expect(page.getByRole('button', {name: 'Send code'})).toBeVisible();
+
+  const back = (await page.getByRole('button', {name: 'Back to sign in'}).boundingBox())!;
+  expect(back.height).toBeGreaterThanOrEqual(44);
+});

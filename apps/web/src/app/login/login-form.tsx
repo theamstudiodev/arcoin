@@ -17,6 +17,13 @@ const ALERT = 'rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-
 const SECONDARY = 'h-11 px-2 text-muted-foreground hover:bg-muted hover:text-white';
 // The shadcn hover fades the button into the navy card (olive); keep it solid lime and brighten it instead.
 const PRIMARY = 'h-11 font-semibold hover:bg-primary hover:brightness-110';
+// Small text controls get an invisible area that makes them 44px to tap without changing the card's look. The
+// password toggle only grows upwards: just below it is the password field.
+const TAP_AROUND = "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
+const TAP_ABOVE = "relative after:absolute after:-inset-x-2 after:-top-3 after:bottom-0 after:content-['']";
+
+// Supabase sends one email per address per minute. A code from moments ago still works, so say so and carry on.
+const CODE_RECENTLY_SENT = 'A code was sent to this email less than a minute ago. Use the newest one.';
 
 type Mode = 'sign-in' | 'set-password';
 
@@ -60,7 +67,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
     });
   }
 
-  function requestCode(address: string, onSent: (email: string) => void) {
+  function requestCode(address: string, onSent: (email: string, recent: boolean) => void) {
     const parsed = sendCodeSchema.safeParse({email: address});
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
@@ -70,16 +77,17 @@ export function LoginForm({refusal}: {refusal?: string}) {
     setNotice(null);
     startTransition(async () => {
       const result = await sendCode(parsed.data);
-      if (result.ok) onSent(result.data.email);
+      if (result.ok) onSent(result.data.email, result.data.recent);
       else setError(result.error);
     });
   }
 
   function submitEmail(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    requestCode(email, (address) => {
+    requestCode(email, (address, recent) => {
       setSentTo(address);
       setCode('');
+      if (recent) setNotice(CODE_RECENTLY_SENT);
     });
   }
 
@@ -108,7 +116,12 @@ export function LoginForm({refusal}: {refusal?: string}) {
 
   function resendCode() {
     if (!sentTo) return;
-    requestCode(sentTo, () => {
+    requestCode(sentTo, (_address, recent) => {
+      if (recent) {
+        // No new email went out, so whatever they've typed from the newest one still counts.
+        setNotice(CODE_RECENTLY_SENT);
+        return;
+      }
       setCode('');
       setNotice('New code sent.');
     });
@@ -168,7 +181,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
             onClick={() => setShowPassword((shown) => !shown)}
             aria-controls={id}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className={`${LABEL} -my-2 px-1 py-2 hover:text-white`}
+            className={`${LABEL} ${TAP_ABOVE} -my-2 px-1 py-2 hover:text-white`}
           >
             {showPassword ? 'Hide' : 'Show'}
           </button>
@@ -192,7 +205,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
     <button
       type="button"
       onClick={() => switchTo('sign-in')}
-      className="self-center px-2 py-2 text-sm text-muted-foreground hover:text-white"
+      className="-my-1 self-center px-2 py-3 text-sm text-muted-foreground hover:text-white"
     >
       Back to sign in
     </button>
@@ -212,7 +225,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
           <button
             type="button"
             onClick={() => switchTo('set-password')}
-            className="font-medium text-lime-500 underline-offset-4 hover:underline"
+            className={`${TAP_AROUND} font-medium text-lime-500 underline-offset-4 hover:underline`}
           >
             Set a password
           </button>

@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {
+  isCodeRecentlySent,
   isSamePassword,
   sendCodeErrorMessage,
   setPasswordErrorMessage,
@@ -78,5 +79,29 @@ describe('isSamePassword', () => {
 
   it('does not confuse other refusals with it', () => {
     expect(isSamePassword({status: 422, code: 'weak_password', message: 'Password is too weak'})).toBe(false);
+  });
+});
+
+describe('isCodeRecentlySent', () => {
+  it('spots the one-email-a-minute limit: a code went out moments ago and still works', () => {
+    expect(
+      isCodeRecentlySent({
+        status: 429,
+        code: 'over_email_send_rate_limit',
+        message: 'For security purposes, you can only request this after 42 seconds.',
+      }),
+    ).toBe(true);
+  });
+
+  it("doesn't mistake the studio-wide hourly email limit for it", () => {
+    expect(isCodeRecentlySent({status: 429, code: 'over_email_send_rate_limit', message: 'Email rate limit exceeded'})).toBe(
+      false,
+    );
+  });
+
+  it("doesn't mistake a refusal for it", () => {
+    expect(isCodeRecentlySent({status: 500, code: 'unexpected_failure', message: 'Database error saving new user'})).toBe(
+      false,
+    );
   });
 });
