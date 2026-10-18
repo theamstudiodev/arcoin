@@ -54,13 +54,20 @@ export async function updatePerson(input: PersonUpdateInput): Promise<ActionResu
   const current = await supabase.from('people').select('name, email, auth_user_id').eq('id', id).maybeSingle();
   if (current.error) return failed(current.error, changes.email);
   if (!current.data) return {ok: false, error: "That person isn't on the team list any more. Reload the page."};
-  // Their sign-in account is tied to the email it was created with; a new one here would lock them out.
-  if (current.data.auth_user_id && current.data.email !== changes.email) {
+  // Their sign-in account is tied to the email it was created with; a new one here would lock them out. The team list
+  // may have been typed in by hand, so capitals don't count as a change, and a linked email is left as stored.
+  const linked = current.data.auth_user_id !== null;
+  if (linked && current.data.email.toLowerCase() !== changes.email) {
     const error = `${current.data.name} already has a sign-in for this email, so it can't change here.`;
     return {ok: false, error, fieldErrors: {email: error}};
   }
+  const {email, ...details} = changes;
 
-  const {data, error} = await supabase.from('people').update(changes).eq('id', id).select('id');
+  const {data, error} = await supabase
+    .from('people')
+    .update(linked ? details : {...details, email})
+    .eq('id', id)
+    .select('id');
   if (error) return failed(error, changes.email);
   // Row-level security turns a refused update into "no rows changed", not an error.
   if (data.length === 0) return failed({code: '42501', message: 'no rows updated'}, changes.email);

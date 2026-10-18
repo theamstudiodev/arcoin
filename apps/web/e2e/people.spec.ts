@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import {signInThroughUi, signInWithPassword} from './helpers/auth';
+import {ensurePassword, signInThroughUi, signInWithPassword} from './helpers/auth';
 import {AM_STUDIO, addTeamMember, sql} from './helpers/db';
 
 // The seeded team: name, role and time on production.
@@ -113,4 +113,34 @@ test('a junior cannot add a person directly', async () => {
   const {error} = await db.from('people').insert({org_id: AM_STUDIO, email, name: 'Sneaky', role: 'junior'});
   expect(error?.code).toBe('42501');
   expect(sql(`select count(*) from public.people where email = '${email}'`)).toBe('0');
+});
+
+test('Athiq edits someone who has signed in, even if their email was typed with capitals', async ({page}) => {
+  const n = Date.now();
+  const name = `Ar. E2E Signed ${n}`;
+  // Typed into SQL by hand, as the setup guide has the real team entered.
+  const typed = `E2E-signed-${n}@AMStudio.test`;
+  addTeamMember(typed, name);
+  await ensurePassword(typed.toLowerCase(), 'signed-in-password-5'); // they've joined, so the email is locked
+
+  await signInThroughUi(page, 'athiq@amstudio.test');
+  const person = page.getByRole('listitem').filter({hasText: name});
+  await person.getByRole('button', {name: `Edit ${name}`}).click();
+  const edit = page.getByRole('dialog', {name: `Edit ${name}`});
+  await edit.getByLabel('Time on production').selectOption({label: '75%'});
+  await edit.getByRole('button', {name: 'Save changes'}).click();
+
+  await expect(edit).toBeHidden();
+  await expect(person).toContainText('75%');
+});
+
+test("the person form's fields don't make an iPhone zoom in", async ({page}) => {
+  await signInThroughUi(page, 'athiq@amstudio.test');
+  await page.getByRole('button', {name: 'Add person'}).click();
+  const add = page.getByRole('dialog', {name: 'Add person'});
+
+  // iPhones zoom the page when a field smaller than 16px gets focus, and stay zoomed.
+  for (const field of ['Name', 'Email', 'Role', 'Time on production']) {
+    await expect(add.getByLabel(field), field).toHaveCSS('font-size', '16px');
+  }
 });
