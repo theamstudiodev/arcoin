@@ -30,11 +30,15 @@ export function OfflineStrip() {
   const pathname = usePathname();
   // When what is on screen was last drawn with a connection. A navigation that arrives is fresh by
   // definition, so it resets this.
-  const drawnAt = useRef(Date.now());
+  const drawnAt = useRef<number | null>(null);
   const [offline, setOffline] = useState(false);
   const [notice, setNotice] = useState(() => offlineNotice(0));
 
-  const retell = useCallback(() => setNotice(offlineNotice(minutesBetween(drawnAt.current, Date.now()))), []);
+  // Before the mount effect has run, what is on screen was drawn just now, so nothing is stale yet.
+  const retell = useCallback(
+    () => setNotice(offlineNotice(minutesBetween(drawnAt.current ?? Date.now(), Date.now()))),
+    [],
+  );
 
   useEffect(() => {
     drawnAt.current = Date.now();

@@ -1,7 +1,6 @@
 import {addDays, type IsoDate, isoWeekday, startOfWeek, type TaskForecast} from '@studesk/engine';
 import {blockingCount, bySeverity, CLASH_LABELS} from '@/lib/clash-rules';
 import {
-  type PackageForSchedule,
   type ProjectForSchedule,
   STUDIO_TIME_ZONE,
   type StudioForecast,
@@ -29,11 +28,10 @@ export type TodayCardKind = 'decide' | 'slipped' | 'due' | 'issued';
 
 /**
  * A task as Today reads it. `done_at` is the moment the database stamped a drawing `checked` or
- * `issued`. `lib/forecast.ts` does not select that column yet, so ISSUED YESTERDAY finds nothing and
- * is therefore not shown — optional rather than invented, because nothing here should guess when a
- * drawing went out.
+ * `issued` — never the client, so ISSUED YESTERDAY reports when a drawing actually went out rather
+ * than when someone's phone thinks it did.
  */
-export type TodayTask = TaskForSchedule & {done_at?: string | null};
+export type TodayTask = TaskForSchedule;
 
 /** One tappable line: a drawing, or a clash under DECIDE. Every line on this screen goes somewhere. */
 export interface TodayRow {
@@ -91,13 +89,10 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 
 const CLASHES_HREF = '/clashes';
 
-/**
- * Where a drawing or a slipped package sends you. Screen 3 — the project's own page with its drawing
- * register — is not built yet, and the studio's rule is that nothing links nowhere, so every one of
- * these lines lands on the board that holds the project. The day `/projects/<id>` exists, this is the
- * only line that changes.
- */
-const PROJECT_HREF = '/projects';
+/** A drawing's line opens the project it belongs to, where its package and dates are. */
+function projectHref(projectId: string): string {
+  return `/projects/${projectId}`;
+}
 
 /** Where a list card sends you: Bushra to her own week, the partners to the studio's. */
 function workHref(admin: boolean): string {
@@ -206,7 +201,7 @@ export function buildToday(input: TodayInput): TodayBrief {
     who: task.assignee_id ? (whoById.get(task.assignee_id) ?? null) : null,
     status: task.status,
     note,
-    href: PROJECT_HREF,
+    href: projectHref(task.project_id),
   });
 
   const cards: TodayCard[] = [];
@@ -240,7 +235,7 @@ export function buildToday(input: TodayInput): TodayBrief {
       label: 'SLIPPED',
       headline: `${named || 'A drawing'} slipped ${days(lateDaysOf(worst))}`,
       sub: null,
-      href: PROJECT_HREF,
+      href: projectHref(worst.project_id),
       rows: slipped.map((task) => row(task, `${days(lateDaysOf(task))} late`)),
     });
   }

@@ -1,5 +1,6 @@
 import type {Metadata, Viewport} from 'next';
 import {IBM_Plex_Mono, Inter, Montserrat} from 'next/font/google';
+import {ServiceWorker} from '@/app/service-worker';
 import {APP_NAME} from '@/lib/brand';
 import './globals.css';
 
@@ -24,7 +25,10 @@ export const viewport: Viewport = {
 export default function RootLayout({children}: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${montserrat.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

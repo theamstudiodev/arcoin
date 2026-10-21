@@ -99,7 +99,11 @@ export async function setTaskStatus(input: TaskStatusInput): Promise<ActionResul
   if (error) return {ok: false, error: taskSaveErrorMessage(error)};
   if (data.length === 0) return refused(id, CHANGE_REFUSED);
 
+  // A status change moves the drawing on three screens: its register, the person's own week, and the
+  // morning brief that counts what went out yesterday.
   revalidatePath(`/projects/${data[0]?.project_id}`);
+  revalidatePath('/my-work');
+  revalidatePath('/today');
   return {ok: true, data: null};
 }
 

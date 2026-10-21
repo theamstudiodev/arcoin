@@ -1,5 +1,7 @@
 import {redirect} from 'next/navigation';
 import type {ReactNode} from 'react';
+import {InstallCard} from '@/app/(app)/install-card';
+import {OfflineStrip} from '@/app/(app)/offline-strip';
 import {TopBar} from '@/app/(app)/top-bar';
 import {getViewer} from '@/lib/me';
 import {isAdmin} from '@/lib/roles';
@@ -18,7 +20,9 @@ export default async function AppLayout({children}: {children: ReactNode}) {
   return (
     <>
       <TopBar name={me.name} isAdmin={isAdmin(me.role)} />
+      <OfflineStrip />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 md:px-6 md:py-6">{children}</main>
+      <InstallCard />
     </>
   );
 }
