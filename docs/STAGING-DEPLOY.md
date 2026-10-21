@@ -72,13 +72,31 @@ fake team reaches staging.
 | 5 | `20261017000500_audit.sql` | append-only audit log |
 | 6 | `20261018050438_password_needs_verified_email.sql` | no password until the email is verified |
 
+### Checked on staging, 2026-10-21
+
+Staging was **not** a fresh project. Five of the six migrations were already applied; only the security fix
+is pending, so this step is one migration, not six.
+
+| Finding | State |
+|---|---|
+| `arcoin-staging` | `aiaxzemsbrsghlimfzpk`, ap-south-1, ACTIVE_HEALTHY, linked |
+| Migrations 1–5 | already applied |
+| `20261018050438_password_needs_verified_email` | **pending** — `db push --dry-run` confirms it is the only one |
+| Rows in orgs, people, projects, auth.users | **0** — staging holds no data at all |
+| `[remotes.staging]` override | loading correctly (`Loading config override: [remotes.staging]`) |
+
 ```bash
 supabase projects list                       # verify arcoin-staging FIRST, every time
-supabase link --project-ref aiaxzemsbrsghlimfzpk
-supabase migration list                      # expect six local, none remote
+supabase migration list                      # 1-5 applied, 20261018050438 pending
+supabase db push --dry-run                   # confirm it would push exactly that one
 supabase db push                             # ← needs explicit approval
 supabase migration list                      # expect six local, six remote
 ```
+
+> ⚠️ **`supabase db query` targets the LOCAL database unless you pass `--linked`.** Without the flag it
+> silently answers from the local stack. During this check it reported 29 people, 6 projects and both auth
+> triggers — all true of local, none of staging, which is empty. Any hosted verification in sections 2, 3
+> and 8 that omits `--linked` will quietly confirm the wrong database.
 
 **Do not** run `supabase config push` — the email-template blocker is unresolved. Migrations and
 configuration are separate commands; pushing the schema does not touch auth settings.
@@ -125,6 +143,17 @@ select proname from pg_proc where pronamespace = 'app'::regnamespace order by pr
 
 Pass: `relrowsecurity` true for orgs, people, projects, packages, tasks, task_schedule, settings,
 audit_log; and `app.my_org_id`, `app.is_admin`, `app.my_person_id` present.
+
+### Verified on staging, 2026-10-21 — passed
+
+Run early, since it needs no accounts and does not depend on the pending migration.
+
+- **Row-level security: on for all 9 tables, every one with policies.** `audit_log` 1, `holidays` 3,
+  `orgs` 1, `packages` 4, `people` 4, `projects` 4, `settings` 3, `task_schedule` 1, `tasks` 4. No table
+  with RLS off, none with zero policies.
+- **Access helpers present:** `app.my_org_id`, `app.is_admin`, `app.my_person_id`, plus `app.audit`,
+  `app.audit_immutable`, `app.is_project_lead`, `app.link_auth_user`, `app.tasks_before`.
+- `app.no_password_before_verified` absent, as expected until the section 1 push.
 
 Behavioural checks are section 8, because they need accounts.
 
