@@ -1,3 +1,4 @@
+import {TopNav} from '@/app/(app)/top-nav';
 import {Button} from '@/components/ui/button';
 import {signOut} from '@/lib/actions/auth';
 import {APP_NAME} from '@/lib/brand';
@@ -11,7 +12,8 @@ export function TopBar({name}: {name: string}) {
           <span aria-hidden className="size-2.5 rounded-[2px] bg-lime-500" />
           {APP_NAME}
         </span>
-        <span className="ml-auto min-w-0 truncate text-sm text-white/80">{name}</span>
+        <TopNav />
+        <span className="ml-auto min-w-0 truncate text-sm text-white/80 max-sm:sr-only">{name}</span>
         <form action={signOut}>
           <Button type="submit" variant="ghost" className="h-11 px-3 text-white hover:bg-white/10 hover:text-white">
             Sign out

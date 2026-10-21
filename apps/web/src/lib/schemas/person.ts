@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {Constants} from '@/lib/database.types';
 import {emailSchema} from '@/lib/schemas/email';
+import {idSchema} from '@/lib/schemas/id';
 
 const CAPACITY = 'Time on production is a share of the day, from 0.01 to 1.';
 
@@ -22,7 +23,7 @@ export const personSchema = z.object({
   active: z.boolean(),
 });
 
-export const personUpdateSchema = personSchema.extend({id: z.uuid({error: 'That person could not be found.'})});
+export const personUpdateSchema = personSchema.extend({id: idSchema('That person could not be found.')});
 
 export type PersonInput = z.input<typeof personSchema>;
 export type PersonUpdateInput = z.input<typeof personUpdateSchema>;
