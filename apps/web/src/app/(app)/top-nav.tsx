@@ -6,6 +6,8 @@ import {usePathname} from 'next/navigation';
 // The studio's screens, left to right as the partners read them. Registered here in one place so adding
 // a screen is one line rather than a hunt.
 const LINKS = [
+  {href: '/today', label: 'Today', adminOnly: false},
+  {href: '/my-work', label: 'My work', adminOnly: false},
   {href: '/projects', label: 'Portfolio', adminOnly: false},
   {href: '/timeline', label: 'Timeline', adminOnly: false},
   {href: '/clashes', label: 'Clashes', adminOnly: false},

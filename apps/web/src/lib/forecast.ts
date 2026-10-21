@@ -28,7 +28,19 @@ export type ProjectForSchedule = Pick<
 export type PersonForSchedule = Pick<Tables<'people'>, 'id' | 'name' | 'role' | 'capacity' | 'active' | 'sort_order'>;
 export type TaskForSchedule = Pick<
   Tables<'tasks'>,
-  'id' | 'project_id' | 'package_id' | 'title' | 'assignee_id' | 'hours' | 'status' | 'due_date' | 'start_after' | 'sort_order'
+  | 'id'
+  | 'project_id'
+  | 'package_id'
+  | 'title'
+  | 'assignee_id'
+  | 'hours'
+  | 'status'
+  | 'due_date'
+  | 'start_after'
+  | 'sort_order'
+  // Stamped by the database when a drawing reaches `checked` or `issued`, never by the client. Today's
+  // "issued yesterday" card is the only thing that reads it, but it has to come from the same query.
+  | 'done_at'
 >;
 export type PackageForSchedule = Pick<Tables<'packages'>, 'id' | 'project_id' | 'code'>;
 export type SettingsForSchedule = Pick<
@@ -39,7 +51,7 @@ export type SettingsForSchedule = Pick<
 const PROJECT_COLUMNS = 'id, code, name, tier, priority, lead_id, target_date';
 const PERSON_COLUMNS = 'id, name, role, capacity, active, sort_order';
 const TASK_COLUMNS =
-  'id, project_id, package_id, title, assignee_id, hours, status, due_date, start_after, sort_order';
+  'id, project_id, package_id, title, assignee_id, hours, status, due_date, start_after, sort_order, done_at';
 const PACKAGE_COLUMNS = 'id, project_id, code';
 const SETTINGS_COLUMNS = 'workdays, hours_per_day, slot_limit, per_lead_slots, dev_limit, ready_limit';
 

@@ -114,6 +114,7 @@ const ROWS: StudioRows = {
       due_date: '2026-11-06',
       start_after: null,
       sort_order: 1,
+      done_at: null,
     },
     {
       id: 'task-orphan',
@@ -126,6 +127,7 @@ const ROWS: StudioRows = {
       due_date: null,
       start_after: null,
       sort_order: 2,
+      done_at: null,
     },
   ],
   packages: [{id: 'pkg-p04', project_id: 'proj-kadri', code: 'P04'}],
