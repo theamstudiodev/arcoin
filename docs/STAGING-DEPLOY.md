@@ -5,8 +5,22 @@ database rules hold on the real thing. **No real employee is onboarded.** Writte
 
 Run `docs/STAGING-VALIDATION.md` after this. That document checks settings; this one puts the app online.
 
-> **Nothing in this file has been executed.** Every hosted step needs explicit approval, and every remote
-> operation starts by verifying the linked project.
+> **Progress: sections 1, 3 and 4 are done, and section 2 has passed.** Sections 5 to 9 are not started.
+> Every hosted step needs explicit approval, and every remote operation starts by verifying the linked
+> project.
+
+### Execution order — corrected 2026-10-21
+
+The numbering is not the running order. Section 2's behavioural tests need a `people` row to test against,
+so they cannot run before section 4 creates one:
+
+```
+1 (migrations)  →  3 (RLS structure)  →  4 (org + test people)  →  2 (auth triggers, behavioural)
+                →  5 (host config)   →  6 (deploy)  →  7 (signed out)  →  8 (authorisation)  →  9 (rollback)
+```
+
+Section 3 moves early because it needs no accounts and does not depend on the pending migration. Section 2's
+structural half — that both triggers exist — still belongs immediately after section 1.
 
 ---
 
@@ -122,7 +136,48 @@ Then prove they *work*, rather than merely exist — a trigger can be present an
 - **No early password:** register a listed-but-unverified address with a password, then check
   `encrypted_password is null` for it. Pass: null. This is the fix from PR #1, verified on hosted.
 
-If either fails, stop. Do not continue to section 4.
+### Verified on staging, 2026-10-21 — all passed
+
+Structural, straight after the section 1 push:
+
+| Check | Result |
+|---|---|
+| Migrations local → remote | 6 / 6, none pending |
+| `auth.users` triggers | `studesk_link_auth_user` **and** `studesk_no_password_before_verified` |
+| `app.no_password_before_verified` | present |
+
+Behavioural, after section 4 seeded the team:
+
+| # | Test | Result |
+|---|---|---|
+| B1 | Insert an **unlisted** address into `auth.users` | **PASS** — refused, `42501`, *"Studesk: … is not on the team list. Ask an admin to add you first."* |
+| B2 | Insert a **listed** address carrying a password | **PASS** — allowed through, and `encrypted_password` arrived `null` |
+| B3 | `update auth.users set encrypted_password = …` on that unverified row | **PASS** — cleared again |
+| B3b | Same, with `updated_at` written alongside it | **PASS** — still cleared |
+| B4 | `POST /auth/v1/signup` with an **unlisted** address and an attacker's password | **PASS** — HTTP 500, the trigger's `42501` surfacing through GoTrue; no account created |
+| B5 | Link trigger | **PASS** — only the seeded person matching the new account was bound; the other three stayed unlinked |
+
+Residue was removed afterwards: `auth.users` is back to 0 rows, no person is linked, and
+`unverified_with_password` is 0.
+
+### What section 2's HTTP test revealed about the signup path
+
+Signup runs in this order: **allowlist → insert → send email.** The two failures look different, and that
+difference is the proof the gate discriminates correctly:
+
+- an **unlisted** address dies at the insert — HTTP 500, *"Database error saving new user"*
+- a **listed** address on a domain the mailer cannot send to gets past the allowlist and the insert, then
+  fails at the email step — HTTP 400, `email_address_invalid`
+
+`.invalid` is not itself rejected: `probe@staging.invalid` was accepted and blocked by the allowlist, while
+`staging-test-admin@arcoin.invalid` reached the mailer. **GoTrue rolls the account back when the email fails**,
+which is why no test account survived.
+
+The consequence for section 8: **no test account can be created through signup** while built-in email is in
+use, because built-in email only delivers to Supabase team addresses. They must be minted with the secret
+key instead, exactly as section 8 already says.
+
+If any of the above fails on a future project, stop. Do not continue to section 4.
 
 ## 3. Row-level security and permissions
 
@@ -184,8 +239,29 @@ a `director` to walk the real onboarding path end to end:
 
 ```sql
 insert into public.people (org_id, email, name, role, capacity, sort_order) values
-  ('<org-id>', '<your-supabase-account-email>', 'Staging Owner', 'director', 0.5, 100);
+  ('<org-id>', 'theamstudio.design@gmail.com', 'Staging Owner', 'director', 0.5, 100);
 ```
+
+That address was read from the authenticated account (`GET /v1/profile` → `primary_email`, username
+`theamstudiodev`), **not** from git config, which carries a different address entirely. Verify it the same
+way rather than assuming, if the account ever changes hands.
+
+### Done on staging, 2026-10-21 — and safely repeatable
+
+Applied as a single `do $$ … $$` block, which is one statement and therefore one transaction. The org is
+created only when absent; `settings` uses `on conflict (org_id) do nothing`; `people` uses
+`on conflict (org_id, lower(email)) do nothing`, matching the `people_org_email_uq` index on
+`(org_id, lower(email))`. Running it twice left the counts identical — verified, not assumed.
+
+| sort_order | email | role | capacity |
+|---|---|---|---|
+| 100 | `theamstudio.design@gmail.com` | director | 0.50 |
+| 101 | `staging-test-admin@arcoin.invalid` | director | 0.50 |
+| 102 | `staging-test-lead@arcoin.invalid` | lead | 1.00 |
+| 103 | `staging-test-junior@arcoin.invalid` | junior | 1.00 |
+
+`settings` needed only `org_id`: its defaults already match the studio rules — workdays Mon–Sat,
+6 hours a day, 5 slots studio-wide, 2 per lead, 15 in development, 10 ready to release, 60 dormant days.
 
 Remove every `sort_order >= 100` row before the real team is onboarded — section 9 has the statement.
 
@@ -254,8 +330,15 @@ the secret key — a local script, never the app, never the host:
 admin.createUser({email, password, email_confirm: true})
 ```
 
-`email_confirm: true` matters: a confirmed account keeps its password, while an unverified one has it
-cleared by the section 2 trigger. That asymmetry is the fix working as intended.
+`email_confirm: true` matters twice over. A confirmed account keeps its password, while an unverified one has
+it cleared by the section 2 trigger — that asymmetry is the fix working as intended. It also sends no email,
+which is the only reason these accounts can exist at all: a signup for an address the mailer cannot reach is
+rolled back, as section 2 proved.
+
+> **Unverified:** whether GoTrue accepts `@arcoin.invalid` through `admin.createUser` has not been tested.
+> It skips the mailer, so it should pass, but if it refuses the address, re-seed the three test people on a
+> domain the mailer accepts — `staging.invalid` is confirmed accepted — and delete the old rows. Nothing
+> else in the plan changes.
 
 Then, with `@supabase/supabase-js` and the **publishable** key, sign in as each and assert:
 
