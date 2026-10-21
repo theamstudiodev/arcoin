@@ -9,3 +9,7 @@ coverage/
 supabase/.branches
 supabase/.temp
 .DS_Store
+
+# Playwright output: traces and screenshots from the last run
+test-results/
+playwright-report/
