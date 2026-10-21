@@ -13,7 +13,12 @@ export default async function globalSetup(): Promise<void> {
 
   // People and accounts earlier runs created. Their auth users go too: the trigger that links an account to a
   // person fires only when the auth user is created. Some tests sign up with capitals in the address.
+  // Children before parents: a task belongs to a package, a package to a project. Deleting the project
+  // first would work through its cascades, but naming the order keeps it true if a cascade ever changes.
+  sql("delete from public.tasks where title like 'E2E %'");
+  sql("delete from public.packages where project_id in (select id from public.projects where name like 'E2E %')");
   sql("delete from public.projects where name like 'E2E %'");
+  sql("delete from public.holidays where label like 'E2E %'");
   sql("delete from public.people where lower(email) like 'e2e-%@amstudio.test'");
   sql("delete from auth.users where lower(email) like 'e2e-%@amstudio.test'");
 

@@ -15,6 +15,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#0B2545',
+  // The installed app draws under the notch and the home bar, so the phone's navy header and bottom nav
+  // add the inset themselves with pt-safe / pb-safe. Pinch zoom is deliberately left alone — the 16px
+  // rule on form fields is what stops iOS zooming in, not maximumScale.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({children}: LayoutProps<'/'>) {

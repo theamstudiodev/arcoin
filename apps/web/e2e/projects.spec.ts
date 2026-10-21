@@ -2,8 +2,10 @@ import {expect, type Page, test} from '@playwright/test';
 import {signInThroughUi, signInWithPassword} from './helpers/auth';
 import {AM_STUDIO, sql} from './helpers/db';
 
-// The seeded portfolio: four in Development, one waiting to start, one waiting on the client.
-const DEVELOPMENT = ['Mangala Residence', 'Kadri Residence', 'Madikeri Campus Block', 'Munnar Resort'] as const;
+// The seeded portfolio is the studio's real scale: 50 projects, with both production tiers full.
+const TIER_COUNTS = {Development: 15, 'Ready to Release': 10, 'Response Awaited': 15, Dormant: 10} as const;
+// Priorities 1 to 4. The rest of Development runs on to priority 15.
+const DEVELOPMENT_TOP = ['Mangala Residence', 'Kadri Residence', 'Madikeri Campus Block', 'Munnar Resort'] as const;
 
 /** A tier's column, found by its heading, so cards from another tier can't satisfy an assertion. */
 const tier = (page: Page, name: string) =>
@@ -20,39 +22,47 @@ async function openBoard(page: Page, email: string): Promise<void> {
 test('Athiq sees the four tiers, each project under the right one, in priority order', async ({page}) => {
   await openBoard(page, 'athiq@amstudio.test');
 
-  for (const name of ['Development', 'Ready to Release', 'Response Awaited', 'Dormant']) {
+  for (const [name, count] of Object.entries(TIER_COUNTS)) {
     await expect(page.getByRole('heading', {name, level: 2})).toBeVisible();
+    await expect(tier(page, name).getByRole('listitem'), name).toHaveCount(count);
   }
 
-  // Priority 1 first, 4 last — the order the studio works in.
-  const development = tier(page, 'Development').getByRole('listitem');
-  const inOrder = await development.allTextContents();
-  expect(inOrder).toHaveLength(DEVELOPMENT.length);
-  DEVELOPMENT.forEach((name, i) => expect(inOrder[i]).toContain(name));
+  // Priority 1 first — the order the studio works in — and priority 15 last.
+  const inOrder = await tier(page, 'Development').getByRole('listitem').allTextContents();
+  DEVELOPMENT_TOP.forEach((name, i) => expect(inOrder[i], `position ${i}`).toContain(name));
+  expect(inOrder[14]).toContain('Kankanady Mixed Use');
 
-  await expect(tier(page, 'Ready to Release').getByRole('listitem')).toContainText('Kavoor Clinic');
-  await expect(tier(page, 'Response Awaited').getByRole('listitem')).toContainText('Bejai Apartments');
-  await expect(tier(page, 'Dormant')).toContainText('Nothing here');
+  // A waiting room has nothing to rank, so it falls back to the name — at 15 and 10 rows that matters.
+  const dormant = await tier(page, 'Dormant').getByRole('listitem').allTextContents();
+  expect(dormant[0]).toContain('Adyar Farmhouse');
+
+  await expect(card(page, 'Kavoor Clinic')).toBeVisible();
+  await expect(
+    tier(page, 'Response Awaited').getByRole('listitem').filter({hasText: 'Bejai Apartments'}),
+  ).toBeVisible();
 });
 
 test('each capped tier shows how full it is, and the waiting rooms show no limit', async ({page}) => {
   await openBoard(page, 'athiq@amstudio.test');
 
-  await expect(tier(page, 'Development')).toContainText('4 / 15');
-  await expect(tier(page, 'Development').getByLabel('4 of 15 projects')).toBeVisible();
-  await expect(tier(page, 'Ready to Release').getByLabel('1 of 10 project')).toBeVisible();
+  // Both production tiers are seeded exactly at their limit.
+  await expect(tier(page, 'Development')).toContainText('15 / 15');
+  await expect(tier(page, 'Development').getByLabel('15 of 15 projects')).toBeVisible();
+  await expect(tier(page, 'Ready to Release').getByLabel('10 of 10 projects')).toBeVisible();
+
+  // At the limit is not over it.
+  await expect(tier(page, 'Development')).not.toContainText('over');
+  await expect(tier(page, 'Ready to Release')).not.toContainText('over');
 
   // Response Awaited and Dormant hold whatever the client list produces.
-  await expect(tier(page, 'Response Awaited').getByLabel('1 project, no limit')).toBeVisible();
-  await expect(tier(page, 'Dormant').getByLabel('0 projects, no limit')).toBeVisible();
+  await expect(tier(page, 'Response Awaited').getByLabel('15 projects, no limit')).toBeVisible();
+  await expect(tier(page, 'Dormant').getByLabel('10 projects, no limit')).toBeVisible();
 });
 
 test('a tier over its limit is marked', async ({page}) => {
   try {
-    // Four are seeded into Development, so twelve more puts it one over the limit of fifteen.
-    sql(
-      `insert into public.projects (org_id, name, tier) select '${AM_STUDIO}', 'E2E Over ' || g, 'development' from generate_series(1, 12) g`,
-    );
+    // Development is seeded exactly at its limit of fifteen, so one more project puts it over.
+    sql(`insert into public.projects (org_id, name, tier) values ('${AM_STUDIO}', 'E2E Over The Line', 'development')`);
     await openBoard(page, 'athiq@amstudio.test');
 
     await expect(tier(page, 'Development')).toContainText('16 / 15');
@@ -62,13 +72,29 @@ test('a tier over its limit is marked', async ({page}) => {
   }
 });
 
+test('a tier with nothing in it says so', async ({page}) => {
+  try {
+    // Every tier is occupied now, but a studio with nothing dormant is the normal case, not an edge one.
+    sql("update public.projects set tier = 'response_awaited' where tier = 'dormant'");
+    await openBoard(page, 'athiq@amstudio.test');
+
+    await expect(tier(page, 'Dormant')).toContainText('Nothing here');
+    await expect(tier(page, 'Dormant').getByLabel('0 projects, no limit')).toBeVisible();
+  } finally {
+    // The dormant projects are the only AMS-24 codes in the seed.
+    sql("update public.projects set tier = 'dormant' where code like 'AMS-24-%'");
+  }
+});
+
 test('Athiq moves a project to another tier from its card', async ({page}) => {
   try {
     await openBoard(page, 'athiq@amstudio.test');
     await card(page, 'Kavoor Clinic').getByLabel('Tier for Kavoor Clinic').selectOption({label: 'Development'});
 
     await expect(tier(page, 'Development').getByRole('listitem').filter({hasText: 'Kavoor Clinic'})).toBeVisible();
-    await expect(tier(page, 'Ready to Release')).toContainText('Nothing here');
+    // Ready to Release drops to nine, and Development is now one past its limit.
+    await expect(tier(page, 'Ready to Release').getByLabel('9 of 10 projects')).toBeVisible();
+    await expect(tier(page, 'Development')).toContainText('1 over');
     expect(sql("select tier from public.projects where name = 'Kavoor Clinic'")).toBe('development');
   } finally {
     sql("update public.projects set tier = 'ready_to_release' where name = 'Kavoor Clinic'");

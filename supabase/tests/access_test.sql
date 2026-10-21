@@ -98,14 +98,21 @@ reset role;
 -- ---------------------------------------------------------------------------
 -- 3. Junior architect (Bushra)
 -- ---------------------------------------------------------------------------
+-- How many projects AM Studio actually has, read as owner so the junior's view can be compared against
+-- it. This was a hard-coded 6 and broke the moment the seed grew to the studio's real ~50.
+select set_config('studesk.test.am_projects',
+  (select count(*)::text from public.projects where org_id = '00000000-0000-4000-a000-000000000001'), false) \gset
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-e000-000000000005","role":"authenticated"}', true) \gset
 set local role authenticated;
 do $$
 declare n int; t uuid; d timestamptz;
 begin
   select count(*) into n from public.projects;
-  if n <> 6 then raise exception 'FAIL: junior should see all 6 studio projects, saw %', n; end if;
-  raise notice 'ok  3a · junior sees the whole studio plan (6 projects)';
+  if n::text <> current_setting('studesk.test.am_projects') then
+    raise exception 'FAIL: junior should see all % studio projects, saw %',
+      current_setting('studesk.test.am_projects'), n;
+  end if;
+  raise notice 'ok  3a · junior sees the whole studio plan (% projects)', n;
 
   if exists (select 1 from public.projects where name = 'Secret Other Project') then
     raise exception 'FAIL: junior can see another studio''s project';

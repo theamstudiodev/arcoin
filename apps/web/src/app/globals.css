@@ -55,10 +55,40 @@
   --color-navy-700: #13395E;
   --color-navy-600: #16406B;
   --color-navy-400: #4A7BA7;
+  /* Pale enough to read on navy-800: 10.4:1. Used for the summary line in the phone's navy header. */
+  --color-navy-100: #C9D6E5;
   /* The only green in the system. Tailwind's own limes are OKLCH and differ from these. */
   --color-lime-100: #ECFCCB;
   --color-lime-500: #A3E635;
   --color-lime-600: #84CC16;
+  /* What STITCH-PROMPTS calls "lime-dark". Lime is a fill colour, never text on white: lime-500 reaches
+     only 1.5:1 there and lime-600 1.98:1. This is the first step down the scale that passes AA at 5.0:1,
+     so package codes can be set in it. */
+  --color-lime-700: #4D7C0F;
+
+  /* De-emphasised meta only — week dates on the timeline, a role under a name. 3.1:1 on white, so it is
+     below AA for body text: never put anything here that the studio has to read. */
+  --color-text-faint: #8A949C;
+  /* Lateness and warnings, never decoration. Each tint is a background with its own tone as the text. */
+  --color-late-tint: #FEF2F2;
+  --color-at-risk: #F59E0B;
+  --color-at-risk-tint: #FFFBEB;
+  --color-info: #2563EB;
+  --color-info-tint: #EFF6FF;
+
+  /* Project identity, separate from status. Eight hues that avoid red and amber (reserved for lateness)
+     and avoid green (lime is the only green), so a bar's colour can never be mistaken for a state.
+     Every one carries a white 11px label at the 90% opacity the timeline draws them with — the weakest
+     is pink at 5.3:1. Colour is never the only cue: bars carry the project code and the legend repeats
+     it, so the timeline still reads without colour vision. */
+  --color-project-1: #1D4ED8;
+  --color-project-2: #155E75;
+  --color-project-3: #6D28D9;
+  --color-project-4: #BE185D;
+  --color-project-5: #115E59;
+  --color-project-6: #7C2D12;
+  --color-project-7: #334155;
+  --color-project-8: #A21CAF;
 }
 
 :root {
@@ -151,6 +181,15 @@
  * lime, drifting slowly sideways. ONLY for the login page, the PWA splash and empty states — working screens stay
  * on the light background, because dense data reads better on light.
  */
+/* The installed app draws edge to edge (viewport-fit: cover), so anything pinned to the top or bottom
+   of the phone adds the inset itself. Tailwind ships no utility for this. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 @utility bg-blueprint {
   background-color: #081C33;
   background-image:

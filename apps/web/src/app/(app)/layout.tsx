@@ -2,6 +2,7 @@ import {redirect} from 'next/navigation';
 import type {ReactNode} from 'react';
 import {TopBar} from '@/app/(app)/top-bar';
 import {getViewer} from '@/lib/me';
+import {isAdmin} from '@/lib/roles';
 
 // Every screen here is one person's view of the studio, so none of them may be built ahead of time. Without
 // this, `next build` tries to prerender them and reads Supabase's keys from an environment that has none —
@@ -16,7 +17,7 @@ export default async function AppLayout({children}: {children: ReactNode}) {
 
   return (
     <>
-      <TopBar name={me.name} />
+      <TopBar name={me.name} isAdmin={isAdmin(me.role)} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 md:px-6 md:py-6">{children}</main>
     </>
   );

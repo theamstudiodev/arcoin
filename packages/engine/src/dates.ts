@@ -28,3 +28,14 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
 export function maxDate(a: IsoDate, b: IsoDate): IsoDate {
   return a >= b ? a : b;
 }
+
+/** ISO weekday, Monday = 1 … Sunday = 7. Matches `settings.workdays` in the database. */
+export function isoWeekday(date: IsoDate): number {
+  const day = new Date(toUtc(date)).getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
+/** The Monday of the week a date falls in. The timeline's 12-week scale starts from one of these. */
+export function startOfWeek(date: IsoDate): IsoDate {
+  return addDays(date, 1 - isoWeekday(date));
+}
