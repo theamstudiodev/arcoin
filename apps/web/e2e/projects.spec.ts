@@ -1,5 +1,6 @@
 import {expect, type Page, test} from '@playwright/test';
 import {signInThroughUi, signInWithPassword} from './helpers/auth';
+import {E2E_ADMIN, E2E_STAFF} from './helpers/accounts';
 import {AM_STUDIO, sql} from './helpers/db';
 
 // The seeded portfolio is the studio's real scale: 50 projects, with both production tiers full.
@@ -20,7 +21,7 @@ async function openBoard(page: Page, email: string): Promise<void> {
 }
 
 test('Athiq sees the four tiers, each project under the right one, in priority order', async ({page}) => {
-  await openBoard(page, 'athiq@amstudio.test');
+  await openBoard(page, E2E_ADMIN);
 
   for (const [name, count] of Object.entries(TIER_COUNTS)) {
     await expect(page.getByRole('heading', {name, level: 2})).toBeVisible();
@@ -43,7 +44,7 @@ test('Athiq sees the four tiers, each project under the right one, in priority o
 });
 
 test('each capped tier shows how full it is, and the waiting rooms show no limit', async ({page}) => {
-  await openBoard(page, 'athiq@amstudio.test');
+  await openBoard(page, E2E_ADMIN);
 
   // Both production tiers are seeded exactly at their limit.
   await expect(tier(page, 'Development')).toContainText('15 / 15');
@@ -63,7 +64,7 @@ test('a tier over its limit is marked', async ({page}) => {
   try {
     // Development is seeded exactly at its limit of fifteen, so one more project puts it over.
     sql(`insert into public.projects (org_id, name, tier) values ('${AM_STUDIO}', 'E2E Over The Line', 'development')`);
-    await openBoard(page, 'athiq@amstudio.test');
+    await openBoard(page, E2E_ADMIN);
 
     await expect(tier(page, 'Development')).toContainText('16 / 15');
     await expect(tier(page, 'Development')).toContainText('1 over');
@@ -76,7 +77,7 @@ test('a tier with nothing in it says so', async ({page}) => {
   try {
     // Every tier is occupied now, but a studio with nothing dormant is the normal case, not an edge one.
     sql("update public.projects set tier = 'response_awaited' where tier = 'dormant'");
-    await openBoard(page, 'athiq@amstudio.test');
+    await openBoard(page, E2E_ADMIN);
 
     await expect(tier(page, 'Dormant')).toContainText('Nothing here');
     await expect(tier(page, 'Dormant').getByLabel('0 projects, no limit')).toBeVisible();
@@ -88,7 +89,7 @@ test('a tier with nothing in it says so', async ({page}) => {
 
 test('Athiq moves a project to another tier from its card', async ({page}) => {
   try {
-    await openBoard(page, 'athiq@amstudio.test');
+    await openBoard(page, E2E_ADMIN);
     await card(page, 'Kavoor Clinic').getByLabel('Tier for Kavoor Clinic').selectOption({label: 'Development'});
 
     await expect(tier(page, 'Development').getByRole('listitem').filter({hasText: 'Kavoor Clinic'})).toBeVisible();
@@ -103,7 +104,7 @@ test('Athiq moves a project to another tier from its card', async ({page}) => {
 
 test('raising a project up the priority list re-orders the board — the Monday change', async ({page}) => {
   try {
-    await openBoard(page, 'athiq@amstudio.test');
+    await openBoard(page, E2E_ADMIN);
     const priority = card(page, 'Madikeri Campus Block').getByLabel('Priority for Madikeri Campus Block');
 
     // Madikeri is third. Make it most urgent and it leads Development.
@@ -125,7 +126,7 @@ test('raising a project up the priority list re-orders the board — the Monday 
 test('Athiq adds a project, and it lands in the tier chosen for it', async ({page}) => {
   const name = `E2E Tower ${Date.now()}`;
   try {
-    await openBoard(page, 'athiq@amstudio.test');
+    await openBoard(page, E2E_ADMIN);
     await page.getByRole('button', {name: 'Add project'}).click();
 
     const add = page.getByRole('dialog', {name: 'Add project'});
@@ -152,7 +153,7 @@ test('Athiq adds a project, and it lands in the tier chosen for it', async ({pag
 });
 
 test('a duplicate project code is refused plainly', async ({page}) => {
-  await openBoard(page, 'athiq@amstudio.test');
+  await openBoard(page, E2E_ADMIN);
   await page.getByRole('button', {name: 'Add project'}).click();
 
   const add = page.getByRole('dialog', {name: 'Add project'});
@@ -164,7 +165,7 @@ test('a duplicate project code is refused plainly', async ({page}) => {
 });
 
 test('a junior sees the board read-only', async ({page}) => {
-  await openBoard(page, 'bushra@amstudio.test');
+  await openBoard(page, E2E_STAFF);
 
   // They need to see the plan — the scheduler reads capacity in their browser too.
   await expect(card(page, 'Kadri Residence')).toContainText('AMS-26-014');
@@ -176,7 +177,7 @@ test('a junior sees the board read-only', async ({page}) => {
 });
 
 test('a junior cannot move a project directly', async () => {
-  const db = await signInWithPassword('bushra@amstudio.test');
+  const db = await signInWithPassword(E2E_STAFF);
 
   const {data} = await db.from('projects').update({tier: 'dormant'}).eq('code', 'AMS-26-014').select('id');
 
@@ -186,7 +187,7 @@ test('a junior cannot move a project directly', async () => {
 });
 
 test("the project form's fields don't make an iPhone zoom in", async ({page}) => {
-  await openBoard(page, 'athiq@amstudio.test');
+  await openBoard(page, E2E_ADMIN);
   await page.getByRole('button', {name: 'Add project'}).click();
   const add = page.getByRole('dialog', {name: 'Add project'});
 

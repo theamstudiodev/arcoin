@@ -17,6 +17,8 @@ export default defineConfig({
   timeout: 60_000,
   expect: {timeout: 20_000},
   globalSetup: './e2e/global-setup.ts',
+  // Leaves the database as the run found it: see e2e/helpers/accounts.ts.
+  globalTeardown: './e2e/global-teardown.ts',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'retain-on-failure',

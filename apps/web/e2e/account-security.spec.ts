@@ -7,6 +7,7 @@ import {
   setPasswordWithCode,
   signInWithPassword,
 } from './helpers/auth';
+import {E2E_ADMIN, E2E_STAFF} from './helpers/accounts';
 import {AM_STUDIO, addTeamMember, sql} from './helpers/db';
 import {mailpitIds, waitForCode} from './helpers/mailpit';
 
@@ -257,13 +258,13 @@ test('a burst of sign-in attempts around the moment of verification gets nobody 
 });
 
 test("an existing team member's password is never cleared", async () => {
-  for (const email of ['athiq@amstudio.test', 'bushra@amstudio.test']) {
+  for (const email of [E2E_ADMIN, E2E_STAFF]) {
     expect(hasStoredPassword(email), email).toBe(true);
   }
   // Supabase writes to these rows on every sign-in and token refresh. None of that may touch the password.
-  sql(`update auth.users set last_sign_in_at = now(), updated_at = now() where lower(email) = 'athiq@amstudio.test'`);
-  expect(hasStoredPassword('athiq@amstudio.test')).toBe(true);
-  await signInWithPassword('athiq@amstudio.test');
+  sql(`update auth.users set last_sign_in_at = now(), updated_at = now() where lower(email) = '${E2E_ADMIN}'`);
+  expect(hasStoredPassword(E2E_ADMIN)).toBe(true);
+  await signInWithPassword(E2E_ADMIN);
 });
 
 test('a password reset works even after an earlier save failed', async ({page}) => {

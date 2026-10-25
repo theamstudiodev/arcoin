@@ -1,5 +1,6 @@
 import {expect, type Page, test} from '@playwright/test';
 import {signInThroughUi, signInWithPassword} from './helpers/auth';
+import {E2E_ADMIN, E2E_STAFF} from './helpers/accounts';
 import {AM_STUDIO, sql} from './helpers/db';
 
 // The rules the partners agreed, as the seed starts the studio on them. Every test that changes one puts it
@@ -27,7 +28,7 @@ async function openSettings(page: Page, email: string): Promise<void> {
 }
 
 test('Athiq sees the six rules the studio runs on', async ({page}) => {
-  await openSettings(page, 'athiq@amstudio.test');
+  await openSettings(page, E2E_ADMIN);
 
   for (const [label, value] of SEEDED_RULES) {
     await expect(rule(page, label), label).toHaveValue(value);
@@ -35,7 +36,7 @@ test('Athiq sees the six rules the studio runs on', async ({page}) => {
 });
 
 test('the calendar shows a Monday to Saturday week and the holidays the studio closes for', async ({page}) => {
-  await openSettings(page, 'athiq@amstudio.test');
+  await openSettings(page, E2E_ADMIN);
 
   for (const name of WORKING_DAYS) {
     await expect(calendar(page).getByRole('button', {name, pressed: true}), name).toBeVisible();
@@ -51,7 +52,7 @@ test('the calendar shows a Monday to Saturday week and the holidays the studio c
 
 test('a rule saves the moment the field is left, and the card says so', async ({page}) => {
   try {
-    await openSettings(page, 'athiq@amstudio.test');
+    await openSettings(page, E2E_ADMIN);
     const field = rule(page, 'Days before Dormant');
     await field.fill('45');
     await field.blur();
@@ -69,7 +70,7 @@ test('a rule saves the moment the field is left, and the card says so', async ({
 
 test('more than twelve production hours a day is refused in plain words', async ({page}) => {
   try {
-    await openSettings(page, 'athiq@amstudio.test');
+    await openSettings(page, E2E_ADMIN);
     const field = rule(page, 'Production hours per person per day');
     await field.fill('14');
     await field.blur();
@@ -85,7 +86,7 @@ test('more than twelve production hours a day is refused in plain words', async 
 
 test('turning Sunday on saves the new week', async ({page}) => {
   try {
-    await openSettings(page, 'athiq@amstudio.test');
+    await openSettings(page, E2E_ADMIN);
     await calendar(page).getByRole('button', {name: 'Sunday'}).click();
 
     await expect(calendar(page).getByText('Saved')).toBeVisible();
@@ -100,7 +101,7 @@ test('the studio cannot be set to work no days at all', async ({page}) => {
   try {
     // Already down to Monday, so the next toggle is the one that would empty the week.
     sql("update public.settings set workdays = '{1}'");
-    await openSettings(page, 'athiq@amstudio.test');
+    await openSettings(page, E2E_ADMIN);
     await calendar(page).getByRole('button', {name: 'Monday'}).click();
 
     await expect(calendar(page).getByRole('alert')).toContainText('at least one day a week');
@@ -114,7 +115,7 @@ test('the studio cannot be set to work no days at all', async ({page}) => {
 test('Athiq closes the studio for a day, then puts it back', async ({page}) => {
   const day = '2026-07-04';
   try {
-    await openSettings(page, 'athiq@amstudio.test');
+    await openSettings(page, E2E_ADMIN);
     await calendar(page).getByLabel('Date', {exact: true}).fill(day);
     await calendar(page).getByLabel('Holiday name', {exact: true}).fill('E2E Studio closed');
     await calendar(page).getByRole('button', {name: 'Add holiday'}).click();
@@ -133,7 +134,7 @@ test('Athiq closes the studio for a day, then puts it back', async ({page}) => {
 });
 
 test('a junior sees the studio rules, with nothing to change them by', async ({page}) => {
-  await openSettings(page, 'bushra@amstudio.test');
+  await openSettings(page, E2E_STAFF);
 
   for (const [label, value] of SEEDED_RULES) {
     await expect(rules(page).getByRole('listitem').filter({hasText: label}), label).toContainText(value);
@@ -148,7 +149,7 @@ test('a junior sees the studio rules, with nothing to change them by', async ({p
 });
 
 test('a junior cannot change the studio rules or the holidays directly', async () => {
-  const db = await signInWithPassword('bushra@amstudio.test');
+  const db = await signInWithPassword(E2E_STAFF);
 
   const changed = await db.from('settings').update({hours_per_day: 8}).eq('org_id', AM_STUDIO).select('org_id');
   // Row-level security hides the row from the update rather than raising, so nothing changes.
@@ -165,7 +166,7 @@ test('a junior cannot change the studio rules or the holidays directly', async (
 });
 
 test("the settings fields don't make an iPhone zoom in", async ({page}) => {
-  await openSettings(page, 'athiq@amstudio.test');
+  await openSettings(page, E2E_ADMIN);
 
   // iPhones zoom the page when a field smaller than 16px gets focus, and stay zoomed.
   for (const [label] of SEEDED_RULES) {

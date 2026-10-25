@@ -1,4 +1,5 @@
 import {expect, type Page, test} from '@playwright/test';
+import {E2E_ADMIN, E2E_ADMIN_NAME} from './helpers/accounts';
 import {signInThroughUi, TEST_PASSWORD} from './helpers/auth';
 import {addTeamMember} from './helpers/db';
 import {mailpitIds, waitForCode} from './helpers/mailpit';
@@ -8,8 +9,9 @@ const alert = (page: Page) => page.getByRole('main').getByRole('alert');
 
 test('Athiq signs in with his password', async ({page}) => {
   await page.goto('/login');
-  // Typed the way a phone keyboard delivers it: a capital and a trailing space.
-  await page.getByLabel('Email').fill(' Athiq@AMStudio.test ');
+  // Shouted and padded, the way a phone keyboard delivers an address: the screen has to fold the case
+  // and trim the spaces. Derived from the constant rather than typed out, so the two cannot drift.
+  await page.getByLabel('Email').fill(` ${E2E_ADMIN.toUpperCase()} `);
   await page.getByLabel('Password', {exact: true}).fill(TEST_PASSWORD);
   await page.getByRole('button', {name: 'Sign in', exact: true}).click();
   await expect(page).toHaveURL(/\/people$/);
@@ -20,11 +22,11 @@ test('Athiq signs in with his password', async ({page}) => {
   expect(daysLeft).toBeGreaterThan(89);
   expect(daysLeft).toBeLessThanOrEqual(90);
 
-  await expect(page.getByRole('banner')).toContainText('Ar. Athiq');
+  await expect(page.getByRole('banner')).toContainText(E2E_ADMIN_NAME);
 });
 
 test('signing out ends the session on this device', async ({page}) => {
-  await signInThroughUi(page, 'athiq@amstudio.test');
+  await signInThroughUi(page, E2E_ADMIN);
   // Signed in, the sign-in screen sends him straight back to work.
   await page.goto('/login');
   await expect(page).toHaveURL(/\/people$/);
@@ -37,7 +39,7 @@ test('signing out ends the session on this device', async ({page}) => {
 
 test('a wrong password is refused plainly', async ({page}) => {
   await page.goto('/login');
-  await page.getByLabel('Email').fill('athiq@amstudio.test');
+  await page.getByLabel('Email').fill(E2E_ADMIN);
   await page.getByLabel('Password', {exact: true}).fill('not-his-password');
   await page.getByRole('button', {name: 'Sign in', exact: true}).click();
 
