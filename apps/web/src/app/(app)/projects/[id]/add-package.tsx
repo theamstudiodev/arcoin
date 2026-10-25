@@ -27,14 +27,16 @@ export function AddPackage({projectId, codes}: {projectId: string; codes: readon
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    // Full width on a phone, where the select and the button are 385px side by side inside 358px of
+    // room, and the whole screen scrolled sideways for it. Right-aligned from `md`, as before.
+    <div className="flex w-full flex-col items-stretch gap-1 md:w-auto md:items-end">
       <div className="flex items-center gap-2">
         <NativeSelect
           aria-label="Package to add"
           value={code}
           disabled={pending}
           onChange={(event) => setCode(event.target.value as PackageCode)}
-          className="w-56 [&>select]:h-8 [&>select]:text-base"
+          className="min-w-0 flex-1 [&>select]:h-11 [&>select]:text-base md:w-56 md:flex-none md:[&>select]:h-8"
         >
           {codes.map((value) => (
             <NativeSelectOption key={value} value={value}>
@@ -42,7 +44,7 @@ export function AddPackage({projectId, codes}: {projectId: string; codes: readon
             </NativeSelectOption>
           ))}
         </NativeSelect>
-        <Button type="button" disabled={pending} onClick={add} className="h-8">
+        <Button type="button" disabled={pending} onClick={add} className="h-11 shrink-0 md:h-8">
           <PlusIcon />
           {pending ? 'Adding…' : 'Add package'}
         </Button>

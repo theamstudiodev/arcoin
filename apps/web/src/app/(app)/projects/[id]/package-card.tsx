@@ -63,7 +63,11 @@ export function PackageCard({
         )}
       </header>
 
-      <div className="overflow-x-auto">
+      {/* `relative` so the sr-only labels in the last column resolve against this box. Tailwind's
+          sr-only is `position: absolute`, and with no positioned ancestor each one landed at its
+          static position in the initial containing block — 925px across, 157px past a 768px tablet,
+          which let the whole page be dragged sideways into empty space. */}
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[58rem] text-left text-body">
           <thead>
             <tr className="border-b">

@@ -1,4 +1,6 @@
 import {notFound} from 'next/navigation';
+import {CountUp} from '@/app/(app)/count-up';
+import {HeaderFields} from '@/app/(app)/projects/[id]/header-fields';
 import {AddPackage} from '@/app/(app)/projects/[id]/add-package';
 import {PackageCard} from '@/app/(app)/projects/[id]/package-card';
 import {PackageSummary} from '@/app/(app)/projects/[id]/package-summary';
@@ -17,7 +19,6 @@ import {
   type AssigneeChoice,
   byTaskOrder,
   finishesOn,
-  formatHours,
   lateCount,
   type RegisterRow,
   remainingHours,
@@ -41,8 +42,12 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
   if (!full.data) notFound();
 
   const project = full.data;
-  // The database lets an admin or the project's own lead change its work, and refuses everyone else.
+  // Two different permissions, and the database draws the line between them. An admin or the
+  // project's own lead may change its work — its packages and its drawings. Only an admin may
+  // change the project row itself: its tier, its priority, who leads it. The lead used to be
+  // offered the edit dialog and then refused by the database on save.
   const canEdit = me !== null && (isAdmin(me.role) || project.lead_id === me.id);
+  const canEditProject = me !== null && isAdmin(me.role);
 
   const packages = studio.packages.filter((pkg) => pkg.project_id === id).sort(byPackageOrder);
   const rowsFor = (packageId: string): readonly RegisterRow[] =>
@@ -71,17 +76,31 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
               <h1 className="text-page leading-tight font-semibold">{project.name}</h1>
               {project.code && <span className="font-mono text-meta text-muted-foreground">{project.code}</span>}
             </div>
-            <p className="mt-1 text-body text-muted-foreground">
-              {[
-                project.client,
-                project.project_type,
-                TIER_LABELS[project.tier],
-                project.priority === null ? 'Unranked' : `Priority ${project.priority}`,
-                project.target_date ? `Target ${formatShortDate(project.target_date)}` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
+            {/* An admin gets these as fields below, so the line says only what the fields do not: on a
+                phone, where Tier and Priority are the two pills and the rest is read, not typed. */}
+            {canEditProject ? (
+              <p className="mt-1 text-body text-muted-foreground md:hidden">
+                {[
+                  project.client,
+                  project.project_type,
+                  project.target_date ? `Target ${formatShortDate(project.target_date)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            ) : (
+              <p className="mt-1 text-body text-muted-foreground">
+                {[
+                  project.client,
+                  project.project_type,
+                  TIER_LABELS[project.tier],
+                  project.priority === null ? 'Unranked' : `Priority ${project.priority}`,
+                  project.target_date ? `Target ${formatShortDate(project.target_date)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
           </div>
 
           <div className="flex items-start gap-5">
@@ -93,17 +112,21 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
             </div>
             <div className={STAT}>
               <span className={`font-heading text-section font-semibold ${late > 0 ? 'text-destructive' : ''}`}>
-                {late}
+                <CountUp value={late} />
               </span>
               <span className={STAT_LABEL}>Late</span>
             </div>
             <div className={STAT}>
-              <span className="font-heading text-section font-semibold">{formatHours(remainingHours(everyRow.map((row) => row.task)))}</span>
+              <span className="font-heading text-section font-semibold">
+                <CountUp value={remainingHours(everyRow.map((row) => row.task))} as="hours" />
+              </span>
               <span className={STAT_LABEL}>Hours left</span>
             </div>
-            {canEdit && <ProjectDialog project={project} leads={leads} />}
+            {canEditProject && <ProjectDialog project={project} leads={leads} />}
           </div>
         </div>
+
+        {canEditProject && <HeaderFields project={project} leads={leads} />}
 
         {!scheduled && (
           <p className="mt-3 text-meta text-muted-foreground">
@@ -128,27 +151,29 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {packages.map((pkg) => (
+          {packages.map((pkg, index) => (
             <div key={pkg.id}>
               {/* The register is a dense editable table and the scope calls it unusable at 390px, so a
                   phone gets the same work read-only. Someone who cannot edit gets that view at any size. */}
               {canEdit ? (
                 <>
                   <div className="md:hidden">
-                    <PackageSummary pkg={pkg} rows={rowsFor(pkg.id)} people={people} />
+                    <PackageSummary pkg={pkg} rows={rowsFor(pkg.id)} people={people} defaultOpen={index === 0} />
                   </div>
                   <div className="hidden md:block">
                     <PackageCard pkg={pkg} rows={rowsFor(pkg.id)} people={people} scheduled={scheduled} />
                   </div>
                 </>
               ) : (
-                <PackageSummary pkg={pkg} rows={rowsFor(pkg.id)} people={people} />
+                <PackageSummary pkg={pkg} rows={rowsFor(pkg.id)} people={people} defaultOpen={index === 0} />
               )}
             </div>
           ))}
 
+          {/* The row wraps: at 390px the package select, the button and the note lay out 632px wide
+              in one line, and the whole document scrolled sideways because of it. */}
           {canEdit && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <AddPackage projectId={id} codes={packageCodesNotOn(packages)} />
               <Badge variant="secondary" className="rounded-[10px] text-label text-muted-foreground md:hidden">
                 Open the full register on desktop
