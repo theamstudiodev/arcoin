@@ -8,8 +8,9 @@ import {loadStudioForecast} from '@/lib/forecast';
 import {formatShortDate} from '@/lib/format';
 import {cn} from '@/lib/utils';
 
-// 11px uppercase mono, the way every label in the app is set (STITCH-PROMPTS Part 1).
-const LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+// The label step, set the way every eyebrow in the app is set (STITCH-PROMPTS Part 1). `text-label`
+// carries the 0.08em itself, so nothing here spaces it a second time.
+const LABEL = 'font-mono text-label font-medium text-muted-foreground uppercase';
 
 /**
  * Where the plan breaks a studio rule or misses a date. Display only: the scheduler decides what
@@ -28,22 +29,22 @@ export default async function ClashesPage() {
 
   return (
     // One column, 900px at most. A clash is a sentence, and a longer line is harder to read, not fuller.
-    <div className="mx-auto w-full max-w-[900px]">
+    <div className="mx-auto w-full max-w-reading">
       <header className="mb-4">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="text-[26px] font-semibold">Clashes</h1>
+          <h1 className="text-page font-semibold">Clashes</h1>
           {cards.length > 0 && (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-meta text-muted-foreground">
               {cards.length} {cards.length === 1 ? 'clash' : 'clashes'}
             </p>
           )}
           {blocking > 0 && (
-            <Badge className="rounded-[10px] bg-red-100 text-[11px] text-red-800">
+            <Badge className="rounded-[10px] bg-red-100 text-label text-red-800">
               {blocking === 1 ? '1 needs a decision' : `${blocking} need a decision`}
             </Badge>
           )}
         </div>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <p className="mt-1 text-body text-muted-foreground">
           Worked out as this page loaded · today is {formatShortDate(forecast.today)} · recalculated whenever anything
           changes
         </p>
@@ -52,7 +53,9 @@ export default async function ClashesPage() {
       {cards.length === 0 ? (
         <NoClashes />
       ) : (
-        <ul className="flex flex-col gap-2">
+        // Sixteen of these on a bad Monday. They arrive one after another from the top, which is the
+        // order Athiq has to work through them in — the blocking ones first.
+        <ul className="stagger flex flex-col gap-2">
           {cards.map((card, index) => (
             <ClashItem key={`${card.clash.kind}-${index}`} card={card} />
           ))}
@@ -76,13 +79,19 @@ function ClashItem({card}: {card: ClashCard}) {
     >
       <div className="min-w-0 flex-1">
         <p className={LABEL}>{card.label}</p>
-        <p className="mt-1 text-[14.5px] leading-snug">{card.clash.message}</p>
-        {detail && <p className="mt-1 text-[13px] text-muted-foreground">{detail}</p>}
+        <p className="mt-1 text-body">{card.clash.message}</p>
+        {/* Three lines a card on the laptop, every card the same height, so a long list stays a list to
+            run down. The phone has no such wall and wraps instead: there the project and the drawing it
+            names are the whole reason to read the second line. */}
+        {detail && <p className="mt-1 text-meta text-muted-foreground md:truncate">{detail}</p>}
       </div>
       {card.project && (
         <Link
           href={projectHref(card.project.id)}
-          className={cn(buttonVariants({variant: 'outline'}), 'h-11 shrink-0 self-end px-3 md:h-9 md:self-auto')}
+          className={cn(
+            buttonVariants({variant: 'outline'}),
+            'h-11 shrink-0 self-end px-3 transition-colors duration-quick md:h-10 md:self-auto',
+          )}
         >
           {/* Six cards can each carry this button, so a screen reader hears which project it opens. */}
           Open project<span className="sr-only"> {card.project.name}</span>
@@ -100,8 +109,8 @@ function NoClashes() {
       <span aria-hidden className="mx-auto grid size-11 place-items-center rounded-full bg-lime-500">
         <CheckIcon className="size-6 text-navy-900" strokeWidth={3} />
       </span>
-      <p className="mt-3 text-[15px] font-semibold text-white">No clashes</p>
-      <p className="mt-1 text-[13px] text-navy-100">
+      <p className="mt-3 text-title font-semibold text-white">No clashes</p>
+      <p className="mt-1 text-body text-navy-100">
         Every scheduled task finishes by its due date and the production limits hold.
       </p>
     </div>

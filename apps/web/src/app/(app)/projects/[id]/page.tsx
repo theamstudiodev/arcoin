@@ -24,7 +24,7 @@ import {
 } from '@/lib/tasks';
 
 const STAT = 'flex flex-col';
-const STAT_LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const STAT_LABEL = 'font-mono text-label font-medium text-muted-foreground uppercase';
 
 export default async function ProjectPage({params}: PageProps<'/projects/[id]'>) {
   const {id} = await params;
@@ -63,15 +63,15 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
   const finish = finishesOn(everyRow);
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-page">
       <div className="mb-4 rounded-lg border bg-card p-4">
         <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-2">
-              <h1 className="text-[26px] leading-tight font-semibold">{project.name}</h1>
-              {project.code && <span className="font-mono text-[13px] text-muted-foreground">{project.code}</span>}
+              <h1 className="text-page leading-tight font-semibold">{project.name}</h1>
+              {project.code && <span className="font-mono text-meta text-muted-foreground">{project.code}</span>}
             </div>
-            <p className="mt-1 text-[13px] text-muted-foreground">
+            <p className="mt-1 text-body text-muted-foreground">
               {[
                 project.client,
                 project.project_type,
@@ -86,19 +86,19 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
 
           <div className="flex items-start gap-5">
             <div className={STAT}>
-              <span className="font-heading text-[20px] font-semibold">
+              <span className="font-heading text-section font-semibold">
                 {finish ? formatShortDate(finish) : '—'}
               </span>
               <span className={STAT_LABEL}>Forecast finish</span>
             </div>
             <div className={STAT}>
-              <span className={`font-heading text-[20px] font-semibold ${late > 0 ? 'text-destructive' : ''}`}>
+              <span className={`font-heading text-section font-semibold ${late > 0 ? 'text-destructive' : ''}`}>
                 {late}
               </span>
               <span className={STAT_LABEL}>Late</span>
             </div>
             <div className={STAT}>
-              <span className="font-heading text-[20px] font-semibold">{formatHours(remainingHours(everyRow.map((row) => row.task)))}</span>
+              <span className="font-heading text-section font-semibold">{formatHours(remainingHours(everyRow.map((row) => row.task)))}</span>
               <span className={STAT_LABEL}>Hours left</span>
             </div>
             {canEdit && <ProjectDialog project={project} leads={leads} />}
@@ -106,7 +106,7 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
         </div>
 
         {!scheduled && (
-          <p className="mt-3 text-[13px] text-muted-foreground">
+          <p className="mt-3 text-meta text-muted-foreground">
             Only Development projects are scheduled, so this one has no forecast dates yet.
           </p>
         )}
@@ -114,8 +114,8 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
 
       {packages.length === 0 ? (
         <div className="bg-blueprint rounded-lg border px-6 py-16 text-center">
-          <p className="text-[15px] font-semibold text-white">No packages yet</p>
-          <p className="mt-1 text-[13px] text-navy-100">
+          <p className="text-title font-semibold text-white">No packages yet</p>
+          <p className="mt-1 text-body text-navy-100">
             {canEdit
               ? 'Add the first package, then the drawings that go in it.'
               : 'The Project Architect will break this project into packages.'}
@@ -150,13 +150,13 @@ export default async function ProjectPage({params}: PageProps<'/projects/[id]'>)
           {canEdit && (
             <div className="flex items-center gap-3">
               <AddPackage projectId={id} codes={packageCodesNotOn(packages)} />
-              <Badge variant="secondary" className="rounded-[10px] text-[11px] text-muted-foreground md:hidden">
+              <Badge variant="secondary" className="rounded-[10px] text-label text-muted-foreground md:hidden">
                 Open the full register on desktop
               </Badge>
             </div>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -35,13 +35,14 @@ export function StatusControl({taskId, status, title}: {taskId: string; status: 
 
   return (
     <div className="mt-2">
-      <div role="group" aria-label={`Status for ${title}`} className="grid grid-cols-3 gap-1 md:grid-cols-5">
+      <div role="group" aria-label={`Status for ${title}`} className="grid max-w-xl grid-cols-3 gap-1 md:grid-cols-5">
         {TASK_STATUS_ORDER.map((option) => {
           const active = option === current;
           // Issued is the one lime fill in the system: it means finished and gone out.
           const tone = active
             ? option === 'issued'
-              ? 'bg-lime-500 text-navy-900 font-medium'
+              // The one moment worth marking: a drawing has gone out. A single 3% swell, not a bounce.
+              ? 'animate-pop bg-lime-500 text-navy-900 font-medium'
               : 'bg-navy-800 text-white font-medium'
             : 'bg-muted text-muted-foreground hover:bg-muted/70';
           return (
@@ -51,7 +52,7 @@ export function StatusControl({taskId, status, title}: {taskId: string; status: 
               disabled={pending}
               aria-pressed={active}
               onClick={() => choose(option)}
-              className={`h-11 rounded-md px-1 text-[12.5px] transition-colors disabled:opacity-60 md:h-9 ${tone}`}
+              className={`h-11 rounded-md px-1 text-body transition-colors duration-brisk disabled:opacity-60 md:h-10 ${tone}`}
             >
               {TASK_STATUS_LABELS[option]}
             </button>
@@ -59,7 +60,7 @@ export function StatusControl({taskId, status, title}: {taskId: string; status: 
         })}
       </div>
       {error && (
-        <p role="alert" className="mt-1 text-[12.5px] text-destructive">
+        <p role="alert" className="mt-1 text-body text-destructive">
           {error}
         </p>
       )}

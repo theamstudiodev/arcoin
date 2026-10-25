@@ -1,7 +1,8 @@
 import type {CapacityFn, IsoDate, TaskForecast} from '@studesk/engine';
 import {describe, expect, it} from 'vitest';
 import type {PackageForSchedule, ProjectForSchedule, TaskForSchedule} from '@/lib/forecast';
-import {buildMyWork, dayLabel, formatHours, type MyWorkInput} from '@/lib/my-work';
+import {addDays} from '@studesk/engine';
+import {buildMyWork, dayLabel, formatHours, LATER_SHOWN, type MyWorkInput} from '@/lib/my-work';
 
 // Wednesday. Mangalore works Monday to Saturday, so this week holds six working days.
 const TODAY = '2026-10-21' as IsoDate;
@@ -255,16 +256,37 @@ describe('buildMyWork', () => {
           title: 'Ground floor working plan',
           status: 'issued',
           hours: 12,
+          done_at: `${TODAY}T11:00:00+05:30`,
         }),
       ],
     });
 
     const finished = work.groups[0];
     expect(finished?.kind).toBe('done');
-    expect(finished?.label).toBe('Finished');
+    expect(finished?.label).toBe('Finished this week');
     expect(titles(finished)).toEqual(['Ground floor working plan']);
     // Nothing of it is left, so it cannot book any of the week.
     expect(work.week.bookedHours).toBe(0);
+  });
+
+  it('leaves older finished work off the screen entirely', () => {
+    // A junior two years in has issued several hundred drawings. Without this window the card list
+    // became a complete archive with this morning's three jobs at the top of it.
+    const work = build({
+      tasks: [
+        task({
+          id: 't-old',
+          project_id: KADRI.id,
+          package_id: 'pkg-kadri-p04',
+          title: 'Site survey plan',
+          status: 'issued',
+          hours: 8,
+          done_at: '2026-08-14T11:00:00+05:30',
+        }),
+      ],
+    });
+
+    expect(work.groups).toHaveLength(0);
   });
 
   it('counts the hours left in the week’s drawings against the days the person has', () => {
@@ -348,3 +370,42 @@ describe('buildMyWork', () => {
 function titles(group: {tasks: readonly {title: string}[]} | undefined): string[] {
   return (group?.tasks ?? []).map((task) => task.title);
 }
+
+describe('the week window', () => {
+  it('gives this week a heading a day and everything after it one heading between them', () => {
+    // Bushra carries twenty open drawings. Unbounded, this screen ran to four phone-lengths of day
+    // headings under a title that says "This week".
+    const tasks = Array.from({length: 9}, (_, index) =>
+      task({
+        id: `t${index}`,
+        project_id: KADRI.id,
+        package_id: 'pkg-kadri-p04',
+        title: `Drawing ${index}`,
+        hours: 6,
+        sort_order: index + 1,
+      }),
+    );
+    const forecasts = new Map(
+      tasks.map((t, index) => [
+        t.id,
+        // Two inside the week, seven well past it.
+        {
+          taskId: t.id,
+          start: index < 2 ? addDays(TODAY, index) : addDays(TODAY, 20 + index),
+          end: TODAY,
+          lateDays: 0,
+          reason: null,
+        } as TaskForecast,
+      ]),
+    );
+
+    const work = build({tasks, forecasts});
+    const labels = work.groups.map((group) => group.label);
+
+    expect(labels.slice(0, 2)).toEqual(['Today', 'Tomorrow']);
+    expect(labels.at(-1)).toBe('After this week');
+    const later = work.groups.at(-1)!;
+    expect(later.tasks).toHaveLength(LATER_SHOWN);
+    expect(later.note).toBe('7 drawings are queued after Saturday. The next 5 are below.');
+  });
+});

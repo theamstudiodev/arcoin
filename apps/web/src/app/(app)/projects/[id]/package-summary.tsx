@@ -36,17 +36,17 @@ export function PackageSummary({
     <section className="rounded-lg border bg-card md:hidden">
       <header className="flex flex-col gap-1 border-b bg-navy-800/5 px-3 py-2.5">
         <h3 className="flex items-baseline gap-2">
-          <span className="font-mono text-[13px] font-medium text-lime-700">{pkg.code}</span>
-          <span className="text-[15px] font-semibold">{PACKAGE_NAMES[pkg.code]}</span>
+          <span className="font-mono text-meta font-medium text-lime-700">{pkg.code}</span>
+          <span className="text-title font-semibold">{PACKAGE_NAMES[pkg.code]}</span>
         </h3>
-        <p className="font-mono text-[12px] text-muted-foreground tabular-nums">
+        <p className="font-mono text-meta text-muted-foreground tabular-nums">
           {issued} / {tasks.length} issued · {formatHours(plannedHours(tasks))} h
           {finish && ` · finishes ${formatRegisterDate(finish)}`}
         </p>
       </header>
 
       {rows.length === 0 ? (
-        <p className="px-3 py-3 text-[13px] text-muted-foreground">Nothing listed in {pkg.code} yet.</p>
+        <p className="px-3 py-3 text-meta text-muted-foreground">Nothing listed in {pkg.code} yet.</p>
       ) : (
         <ul className="divide-y">
           {rows.map(({task, forecast}) => {
@@ -58,18 +58,18 @@ export function PackageSummary({
                 className={`flex flex-col gap-1 px-3 py-2.5 ${task.status === 'issued' ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-start gap-2">
-                  <p className="min-w-0 flex-1 text-[15px] leading-tight font-semibold">{task.title}</p>
-                  <Badge className={`shrink-0 rounded-[10px] text-[11px] ${TASK_STATUS_TONE[task.status]}`}>
+                  <p className="min-w-0 flex-1 text-title leading-tight font-semibold">{task.title}</p>
+                  <Badge className={`shrink-0 rounded-[10px] text-label ${TASK_STATUS_TONE[task.status]}`}>
                     {TASK_STATUS_LABELS[task.status]}
                   </Badge>
                 </div>
-                <p className="text-[13px] text-muted-foreground">
+                <p className="text-meta text-muted-foreground">
                   {task.assignee_id ? (nameOf.get(task.assignee_id) ?? 'No longer on the team') : 'Nobody yet'} ·{' '}
                   {formatHours(task.hours)} h
                   {task.due_date && ` · due ${formatRegisterDate(task.due_date)}`}
                 </p>
                 {range && (
-                  <p className="font-mono text-[12.5px] tabular-nums">
+                  <p className="font-mono text-meta tabular-nums">
                     {range}
                     {late > 0 && <span className="font-medium text-red-700"> · {lateLabel(late)}</span>}
                   </p>

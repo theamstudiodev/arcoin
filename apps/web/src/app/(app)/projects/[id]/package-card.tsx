@@ -13,7 +13,7 @@ import {
   type RegisterRow,
 } from '@/lib/tasks';
 
-const TH = 'px-2 py-1.5 font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const TH = 'px-2 py-1.5 font-mono text-label font-medium text-muted-foreground uppercase';
 
 /**
  * One package, as a desktop table. Hidden below `md`: the Phase 1 scope calls the register unusable at
@@ -42,10 +42,10 @@ export function PackageCard({
     <section className="hidden overflow-hidden rounded-lg border bg-card md:block">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b bg-navy-800/5 px-3 py-2">
         <h3 className="flex items-baseline gap-2">
-          <span className="font-mono text-[13px] font-medium text-lime-700">{pkg.code}</span>
-          <span className="text-[16px] font-semibold">{PACKAGE_NAMES[pkg.code]}</span>
+          <span className="font-mono text-meta font-medium text-lime-700">{pkg.code}</span>
+          <span className="text-title font-semibold">{PACKAGE_NAMES[pkg.code]}</span>
         </h3>
-        <p className="ml-auto flex flex-wrap items-center gap-x-1.5 font-mono text-[12px] text-muted-foreground tabular-nums">
+        <p className="ml-auto flex flex-wrap items-center gap-x-1.5 font-mono text-meta text-muted-foreground tabular-nums">
           <span>
             {issued} / {tasks.length} issued
           </span>
@@ -59,41 +59,41 @@ export function PackageCard({
           )}
         </p>
         {inProduction && (
-          <Badge className="rounded-[10px] bg-lime-500 text-[11px] text-navy-900">In production</Badge>
+          <Badge className="rounded-[10px] bg-lime-500 text-label text-navy-900">In production</Badge>
         )}
       </header>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[52rem] text-left text-sm">
+        <table className="w-full min-w-[58rem] text-left text-body">
           <thead>
             <tr className="border-b">
-              <th scope="col" className={`${TH} w-[8.5rem]`}>
+              <th scope="col" className={`${TH} w-[8.75rem]`}>
                 Status
               </th>
-              <th scope="col" className={TH}>
+              <th scope="col" className={`${TH} w-[34%]`}>
                 Drawing / task
               </th>
-              <th scope="col" className={`${TH} w-[10rem]`}>
+              <th scope="col" className={`${TH} w-[8.5rem]`}>
                 Assigned
               </th>
-              <th scope="col" className={`${TH} w-[5.5rem]`}>
+              <th scope="col" className={`${TH} w-[4.5rem]`}>
                 Hours
               </th>
-              <th scope="col" className={`${TH} w-[9.5rem]`}>
+              <th scope="col" className={`${TH} w-[9rem]`}>
                 Due
               </th>
               <th scope="col" className={`${TH} w-[10.5rem]`}>
                 Forecast
               </th>
-              <th scope="col" className={`${TH} w-[6.5rem]`}>
+              <th scope="col" className={`${TH} w-[3rem]`}>
                 <span className="sr-only">Remove</span>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="stagger-rows divide-y">
             {rows.length === 0 ? (
-              <tr className="h-9">
-                <td colSpan={7} className="px-2 text-[13px] text-muted-foreground">
+              <tr className="h-11">
+                <td colSpan={7} className="px-2 text-meta text-muted-foreground">
                   Nothing listed in {pkg.code} yet. Add the first drawing below.
                 </td>
               </tr>

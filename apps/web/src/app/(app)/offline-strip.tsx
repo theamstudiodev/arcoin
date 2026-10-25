@@ -18,7 +18,7 @@ const DIM_STALE_CONTENT = 'body[data-offline] main{opacity:0.7;transition:opacit
 // has to be able to read this line, and #F59E0B on #FFFBEB is 1.9:1.
 const STRIP =
   'flex items-center justify-center gap-1.5 border-b border-at-risk/35 bg-at-risk-tint px-4 py-1.5 ' +
-  'text-center text-[12.5px] leading-tight text-[#92400E] md:px-6';
+  'text-center text-meta leading-tight text-[#92400E] md:px-6';
 
 /**
  * The amber strip: on screen only when the phone is offline, saying how old what is underneath is.

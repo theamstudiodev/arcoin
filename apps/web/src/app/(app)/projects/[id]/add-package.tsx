@@ -48,7 +48,7 @@ export function AddPackage({projectId, codes}: {projectId: string; codes: readon
         </Button>
       </div>
       {error && (
-        <p role="alert" className="text-[13px] text-red-700">
+        <p role="alert" className="text-body text-destructive">
           {error}
         </p>
       )}

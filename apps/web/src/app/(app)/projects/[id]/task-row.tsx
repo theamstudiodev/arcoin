@@ -21,8 +21,8 @@ import {
 // that takes focus — then stays zoomed. The register is a desktop screen, not a phone one, but 768px
 // is an iPad in portrait.
 const CELL = 'px-2 align-middle';
-const FIELD = 'h-8 text-base md:text-base';
-const SELECT = 'w-full [&>select]:h-8 [&>select]:text-base';
+const FIELD = 'h-9';
+const SELECT = 'w-full [&>select]:h-9';
 
 /**
  * One line of the drawing register, editable in place. This is the screen the studio lives in, so every
@@ -126,14 +126,14 @@ export function TaskRegisterRow({
   return (
     <>
       {/* An issued drawing is finished and out of the studio: still listed, no longer competing for attention. */}
-      <tr className={`h-9 ${status === 'issued' ? 'opacity-60' : ''}`}>
+      <tr className={`h-11 ${status === 'issued' ? 'opacity-60' : ''}`}>
         <td className={CELL}>
           <NativeSelect
             aria-label={`Status of ${task.title}`}
             value={status}
             disabled={pending}
             onChange={(event) => moveStatus(event.target.value as TaskStatus)}
-            className={`${SELECT} rounded-[10px] ${TASK_STATUS_TONE[status]} [&>select]:border-transparent`}
+            className={`${SELECT} rounded-[10px] transition-colors duration-brisk ${TASK_STATUS_TONE[status]} [&>select]:border-transparent`}
           >
             {TASK_STATUS_ORDER.map((value) => (
               <NativeSelectOption key={value} value={value}>
@@ -200,7 +200,7 @@ export function TaskRegisterRow({
             className={`${FIELD} px-2 font-mono tabular-nums`}
           />
         </td>
-        <td className={`${CELL} font-mono text-[12.5px] whitespace-nowrap tabular-nums`}>
+        <td className={`${CELL} font-mono text-meta whitespace-nowrap tabular-nums`}>
           {range ? (
             <>
               {range}
@@ -213,42 +213,51 @@ export function TaskRegisterRow({
           )}
         </td>
         <td className={`${CELL} text-right`}>
-          {/* Deleting a drawing takes its hours and its history with it, so it asks first. */}
-          {confirming ? (
-            <span className="flex items-center justify-end gap-1 whitespace-nowrap">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Remove ${task.title}`}
+            disabled={pending}
+            onClick={() => setConfirming(true)}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2Icon />
+          </Button>
+        </td>
+      </tr>
+
+      {/*
+       * Deleting a drawing takes its hours and its history with it, so it asks first — and it asks on a
+       * row of its own rather than inside the last cell. Two buttons side by side forced that column to
+       * 104px on every row in the register, which is 104px taken from the drawing's own name.
+       */}
+      {confirming && (
+        <tr className="animate-in fade-in slide-in-from-top-1 duration-quick bg-late-tint">
+          <td colSpan={7} className="px-2 py-1.5">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-body">Delete “{task.title}” and its hours?</span>
               <Button
                 type="button"
                 variant="destructive"
-                size="xs"
+                size="sm"
                 disabled={pending}
                 onClick={remove}
                 aria-label={`Delete ${task.title}`}
               >
                 Delete
               </Button>
-              <Button type="button" variant="ghost" size="xs" onClick={() => setConfirming(false)}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(false)}>
                 Keep
               </Button>
             </span>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Remove ${task.title}`}
-              disabled={pending}
-              onClick={() => setConfirming(true)}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Trash2Icon />
-            </Button>
-          )}
-        </td>
-      </tr>
+          </td>
+        </tr>
+      )}
       {error && (
         <tr className="bg-late-tint">
           <td colSpan={7} className="px-2 py-1.5">
-            <p role="alert" className="text-[13px] text-red-700">
+            <p role="alert" className="text-body text-destructive">
               {error}
             </p>
           </td>

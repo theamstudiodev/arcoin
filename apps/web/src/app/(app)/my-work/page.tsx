@@ -5,7 +5,7 @@ import {formatShortDate} from '@/lib/format';
 import {getViewer} from '@/lib/me';
 import {buildMyWork, formatHours, type MyWorkGroup, type MyWorkTask} from '@/lib/my-work';
 
-const GROUP_LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const GROUP_LABEL = 'font-mono text-label font-medium text-muted-foreground uppercase';
 
 export default async function MyWorkPage() {
   const {me} = await getViewer();
@@ -24,13 +24,13 @@ export default async function MyWorkPage() {
   });
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-form">
       <header className="mb-4">
-        <h1 className="font-heading text-[22px] font-semibold">My work</h1>
-        <p className="text-[13px] text-muted-foreground">This week</p>
+        <h1 className="font-heading text-page font-semibold">My work</h1>
+        <p className="text-meta text-muted-foreground">This week</p>
 
-        <div className="mt-2 max-w-sm">
-          <p className="font-mono text-[12.5px] text-muted-foreground tabular-nums">{work.week.label}</p>
+        <div className="mt-2 max-w-md">
+          <p className="font-mono text-meta text-muted-foreground tabular-nums">{work.week.label}</p>
           {/* A full bar is the most it can say. Being over is information, not an error — the answer is
               to move a drawing, which only Athiq or the project's lead can do. */}
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -44,8 +44,8 @@ export default async function MyWorkPage() {
 
       {work.taskCount === 0 ? (
         <div className="bg-blueprint rounded-lg border px-6 py-16 text-center">
-          <p className="text-[15px] font-semibold text-white">Nothing assigned to you</p>
-          <p className="mt-1 text-[13px] text-navy-100">
+          <p className="text-title font-semibold text-white">Nothing assigned to you</p>
+          <p className="mt-1 text-body text-navy-100">
             Athiq or the project&rsquo;s architect will put drawings on your list.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default async function MyWorkPage() {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -65,9 +65,9 @@ function Group({group}: {group: MyWorkGroup}) {
     <section>
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
         <h2 className={GROUP_LABEL}>{group.label}</h2>
-        {group.note && <span className="text-[12px] text-muted-foreground">{group.note}</span>}
+        {group.note && <span className="text-meta text-muted-foreground">{group.note}</span>}
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul className="stagger grid gap-3 md:grid-cols-2">
         {group.tasks.map((task) => (
           <Card key={task.id} task={task} done={group.kind === 'done'} />
         ))}
@@ -82,16 +82,16 @@ function Card({task, done}: {task: MyWorkTask; done: boolean}) {
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Link
           href={`/projects/${task.projectId}`}
-          className="font-mono text-[11.5px] text-navy-700 hover:underline"
+          className="font-mono text-meta text-navy-700 hover:underline"
         >
           {task.projectCode ?? task.projectName}
         </Link>
-        <span className="font-mono text-[11.5px] text-text-faint">{task.packageCode}</span>
+        <span className="font-mono text-meta text-text-faint">{task.packageCode}</span>
       </div>
 
-      <p className="mt-0.5 text-[15px] leading-snug font-medium">{task.title}</p>
+      <p className="mt-0.5 text-title leading-snug font-medium">{task.title}</p>
 
-      <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+      <p className="mt-0.5 text-meta text-muted-foreground">
         {formatHours(task.remainingHours)} h left
         {task.dueDate && (
           <>
@@ -104,7 +104,7 @@ function Card({task, done}: {task: MyWorkTask; done: boolean}) {
         )}
       </p>
 
-      {task.blockedReason && <p className="mt-0.5 text-[12.5px] text-at-risk">{task.blockedReason}</p>}
+      {task.blockedReason && <p className="mt-0.5 text-meta text-at-risk">{task.blockedReason}</p>}
 
       <StatusControl taskId={task.id} status={task.status} title={task.title} />
     </li>

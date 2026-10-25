@@ -16,7 +16,7 @@ const STAFF_NOTE = 'Only Asif or Athiq can change the working days and holidays.
 
 // A working day is navy because navy is interaction; a day off is left as an outline. The letters carry it
 // too, so the week still reads without colour.
-const DAY_BASE = 'grid h-11 w-full place-items-center rounded-md border text-[13px] font-medium md:h-9 md:w-9';
+const DAY_BASE = 'grid h-11 w-full place-items-center rounded-md border text-meta font-medium md:h-9 md:w-9';
 const DAY_ON = 'border-navy-800 bg-navy-800 text-white';
 const DAY_OFF = 'border-input text-muted-foreground';
 const CHIP = 'flex items-center gap-2 rounded-[10px] border bg-background py-0.5 pl-2.5';
@@ -181,15 +181,15 @@ export function CalendarCard({
           </form>
         )}
         {closed.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-4 text-center text-[13px] text-muted-foreground">
+          <p className="rounded-lg border border-dashed px-3 py-4 text-center text-meta text-muted-foreground">
             No holidays yet
           </p>
         ) : (
           <ul className="flex flex-wrap gap-1.5">
             {closed.map((holiday) => (
               <li key={holiday.day} className={`${CHIP} ${canEdit ? '' : 'pr-2.5'}`}>
-                <span className="font-mono text-[13px] tabular-nums">{holiday.day}</span>
-                {holiday.label && <span className="text-[12px] text-muted-foreground">{holiday.label}</span>}
+                <span className="font-mono text-meta tabular-nums">{holiday.day}</span>
+                {holiday.label && <span className="text-meta text-muted-foreground">{holiday.label}</span>}
                 {canEdit && (
                   <Button
                     variant="ghost"

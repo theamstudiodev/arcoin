@@ -26,10 +26,10 @@ import {personSchema} from '@/lib/schemas/person';
 const CAPACITY_CHOICES = [1, 0.75, 0.5, 0.25];
 
 // Light working screen: 11px uppercase labels, 44px fields on a phone, the late/over-limit red for errors.
-const LABEL = 'text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const LABEL = 'text-label font-medium text-muted-foreground uppercase';
 const FIELD = 'h-11 md:h-9';
 const SELECT = 'w-full [&>select]:h-11 md:[&>select]:h-9';
-const ALERT = 'rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700';
+const ALERT = 'rounded-md border border-red-200 bg-red-50 px-3 py-2 text-body text-red-700';
 
 /** Adds a person (no `person`) or edits one. The page shows it to admins only; the database refuses anyone else. */
 export function PersonDialog({person}: {person?: PersonRow}) {
@@ -185,7 +185,7 @@ function PersonForm({person, onSaved}: {person?: PersonRow; onSaved: () => void}
           <Label htmlFor={`${id}-active`} className="text-sm font-medium">
             Active
           </Label>
-          <p id={`${id}-active-hint`} className="text-[13px] text-muted-foreground">
+          <p id={`${id}-active-hint`} className="text-meta text-muted-foreground">
             Can sign in and gets scheduled
           </p>
         </div>
@@ -227,12 +227,12 @@ function Field({
       </Label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="text-[13px] text-destructive">
+        <p id={`${id}-error`} className="text-meta text-destructive">
           {error}
         </p>
       ) : (
         hint && (
-          <p id={`${id}-hint`} className="text-[13px] text-muted-foreground">
+          <p id={`${id}-hint`} className="text-meta text-muted-foreground">
             {hint}
           </p>
         )

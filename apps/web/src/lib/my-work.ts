@@ -7,7 +7,7 @@ import {
   REMAINING_SHARE,
   type TaskForecast,
 } from '@studesk/engine';
-import type {PackageForSchedule, ProjectForSchedule, TaskForSchedule} from '@/lib/forecast';
+import {type PackageForSchedule, type ProjectForSchedule, studioToday, type TaskForSchedule} from '@/lib/forecast';
 import type {PackageCode} from '@/lib/package-rules';
 import {isTaskDone, type TaskStatus} from '@/lib/task-rules';
 
@@ -24,6 +24,9 @@ import {isTaskDone, type TaskStatus} from '@/lib/task-rules';
 
 /** Today and the six days after it. The capacity line talks about exactly this window. */
 export const WEEK_LENGTH = 7;
+
+/** How much of the queue beyond this week the phone shows before it stops being a plan and starts being a list. */
+export const LATER_SHOWN = 5;
 
 const WEEKDAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // Repeated from lib/format.ts, which keeps its own list private and always prints the year. A heading
@@ -52,6 +55,8 @@ export interface MyWorkTask {
   start: IsoDate | null;
   /** Why it has no dates, in the engine's words — or ours, when its project is not in Development. */
   blockedReason: string | null;
+  /** When the database stamped it checked or issued. Null while it is still open. */
+  doneAt: string | null;
 }
 
 export type MyWorkGroupKind = 'day' | 'blocked' | 'done';
@@ -149,17 +154,60 @@ export function buildMyWork(input: MyWorkInput): MyWork {
     }
   }
 
-  const groups: MyWorkGroup[] = [...byDay.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : 1))
+  /*
+   * A day heading each, for this week only.
+   *
+   * The engine places work months ahead, and Bushra carries twenty open drawings — left unbounded this
+   * screen ran to four phone-lengths of day headings, under a title that says "This week". What comes
+   * after Saturday gets one heading and the first few cards, so she can see what is coming without
+   * scrolling through January to find it.
+   */
+  const endOfWeek = addDays(today, WEEK_LENGTH - 1);
+  const ordered = [...byDay.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+
+  const groups: MyWorkGroup[] = ordered
+    .filter(([day]) => day <= endOfWeek)
     .map(([day, tasks]): MyWorkGroup => ({key: day, kind: 'day', label: dayLabel(day, today), note: null, tasks}));
+
+  const later = ordered.filter(([day]) => day > endOfWeek).flatMap(([, tasks]) => tasks);
+  if (later.length > 0) {
+    const shown = later.slice(0, LATER_SHOWN);
+    groups.push({
+      key: 'later',
+      kind: 'day',
+      label: 'After this week',
+      note:
+        later.length > shown.length
+          ? `${later.length} drawings are queued after Saturday. The next ${shown.length} are below.`
+          : null,
+      tasks: shown,
+    });
+  }
 
   // A drawing nobody can schedule is still the person's work, so it gets a heading of its own rather
   // than disappearing off the bottom of the list.
   if (blocked.length > 0) {
     groups.push({key: 'blocked', kind: 'blocked', label: 'Not scheduled', note: BLOCKED_NOTE, tasks: blocked});
   }
-  if (done.length > 0) {
-    groups.push({key: 'done', kind: 'done', label: 'Finished', note: null, tasks: done});
+  /*
+   * Finished work, newest first, and only what went out this week.
+   *
+   * Without the window this group grows forever: a junior two years in has issued several hundred
+   * drawings, and the screen became a complete archive with today's three jobs at the top of it. The
+   * header says "This week", so this is what that means for work already out of the door.
+   */
+  const recentlyDone = done
+    .filter((task) => task.doneAt !== null && studioToday(new Date(task.doneAt)) >= addDays(today, -WEEK_LENGTH))
+    .sort((a, b) => (a.doneAt ?? '') < (b.doneAt ?? '') ? 1 : -1);
+
+  if (recentlyDone.length > 0) {
+    groups.push({
+      key: 'done',
+      kind: 'done',
+      label: 'Finished this week',
+      note: null,
+      tasks: recentlyDone,
+    });
   }
 
   return {groups, taskCount: mine.length, week: weekLoad(mine, personId, today, capacity)};
@@ -203,6 +251,7 @@ function describe(
     sortOrder: task.sort_order,
     start: forecast?.start ?? null,
     blockedReason: forecast?.start ? null : whyNoDates(project, forecast),
+    doneAt: task.done_at,
   };
 }
 

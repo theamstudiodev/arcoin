@@ -34,7 +34,7 @@ export default async function LoginPage() {
         <div
           className={`${CARD_TOKENS} rounded-lg border border-[rgba(201,214,229,0.22)] bg-navy-800/80 p-6 text-white backdrop-blur-md`}
         >
-          <h1 className="mb-7 flex items-center gap-2.5 text-[28px] leading-none font-extrabold tracking-tight">
+          <h1 className="mb-7 flex items-center gap-2.5 text-page leading-none font-extrabold tracking-tight">
             <span aria-hidden className="size-4 rounded-[3px] bg-lime-500" />
             {APP_NAME}
           </h1>

@@ -13,7 +13,7 @@ import type {AssigneeChoice} from '@/lib/tasks';
 // 16px, like every other field in the register: an iPad is iOS Safari, and it zooms on anything smaller.
 const CELL = 'px-2 py-1.5 align-middle';
 const FIELD = 'h-8 text-base md:text-base';
-const LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const LABEL = 'font-mono text-label font-medium text-muted-foreground uppercase';
 
 /**
  * The row that adds work to a package — a drawing, or in `ADD` a revised option, a client meeting deck,
@@ -138,7 +138,7 @@ export function AddTaskRow({
       {error && (
         <tr className="bg-late-tint">
           <td colSpan={7} className="px-2 py-1.5">
-            <p role="alert" className="text-[13px] text-red-700">
+            <p role="alert" className="text-body text-destructive">
               {error}
             </p>
           </td>

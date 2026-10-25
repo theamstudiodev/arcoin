@@ -35,3 +35,23 @@ export function projectColourClass(key: string): ProjectBarClass {
   }
   return PROJECT_BAR_CLASSES[hash % PROJECT_BAR_CLASSES.length] as ProjectBarClass;
 }
+
+/** The same eight hues as a 4px left edge, for a board card or a phone list row. */
+export const PROJECT_EDGE_CLASSES = [
+  'border-l-project-1',
+  'border-l-project-2',
+  'border-l-project-3',
+  'border-l-project-4',
+  'border-l-project-5',
+  'border-l-project-6',
+  'border-l-project-7',
+  'border-l-project-8',
+] as const;
+
+export type ProjectEdgeClass = (typeof PROJECT_EDGE_CLASSES)[number];
+
+/** Keyed exactly as `projectColourClass`, so a project's card edge and its timeline bar are one hue. */
+export function projectEdgeClass(key: string): ProjectEdgeClass {
+  const index = PROJECT_BAR_CLASSES.indexOf(projectColourClass(key));
+  return PROJECT_EDGE_CLASSES[index] as ProjectEdgeClass;
+}

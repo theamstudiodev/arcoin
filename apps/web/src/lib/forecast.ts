@@ -154,6 +154,11 @@ export interface StudioForecast extends StudioRows {
   /** Every scheduled task's forecast, by task id. A task with no forecast is not on a Development project. */
   forecasts: Map<string, TaskForecast>;
   clashes: readonly Clash[];
+  /**
+   * The same capacity function the engine filled its days with. Returned rather than rebuilt by each
+   * caller so People's week bars and the forecast under them can never disagree about how long a day is.
+   */
+  capacity: CapacityFn;
 }
 
 /** Reads the studio under the viewer's own row-level security, then runs the engine over it. */
@@ -188,5 +193,6 @@ export async function loadStudioForecast(today: IsoDate = studioToday()): Promis
     today,
     forecasts: new Map(result.forecasts.map((forecast) => [forecast.taskId, forecast])),
     clashes: result.clashes,
+    capacity: capacityFrom(rows.people, rows.settings, rows.holidays),
   };
 }

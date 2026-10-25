@@ -12,7 +12,7 @@ import {sendCodeSchema, setPasswordSchema, signInSchema} from '@/lib/schemas/aut
 const SLOTS = [0, 1, 2, 3, 4, 5];
 
 // The card is dark (see page.tsx): labels in Plex Mono, errors in a red tint, secondary actions in pale blue-grey.
-const LABEL = 'font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase';
+const LABEL = 'font-mono text-label font-medium text-muted-foreground uppercase';
 const ALERT = 'rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-sm text-red-200';
 const SECONDARY = 'h-11 px-2 text-muted-foreground hover:bg-muted hover:text-white';
 // The shadcn hover fades the button into the navy card (olive); keep it solid lime and brighten it instead.
@@ -21,6 +21,8 @@ const PRIMARY = 'h-11 font-semibold hover:bg-primary hover:brightness-110';
 // password toggle only grows upwards: just below it is the password field.
 const TAP_AROUND = "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
 const TAP_ABOVE = "relative after:absolute after:-inset-x-2 after:-top-3 after:bottom-0 after:content-['']";
+// Placeholders dimmer than the labels, so an empty field never reads as filled in.
+const FIELD = 'h-11 placeholder:text-muted-foreground/60';
 
 // Supabase sends one email per address per minute. A code from moments ago still works, so say so and carry on.
 const CODE_RECENTLY_SENT = 'A code was sent to this email less than a minute ago. Use the newest one.';
@@ -162,14 +164,15 @@ export function LoginForm({refusal}: {refusal?: string}) {
         inputMode="email"
         autoCapitalize="none"
         spellCheck={false}
+        placeholder="Enter your email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        className="h-11"
+        className={FIELD}
       />
     </div>
   );
 
-  function passwordField(id: string, label: string, autoComplete: string) {
+  function passwordField(id: string, label: string, autoComplete: string, placeholder: string) {
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
@@ -193,9 +196,10 @@ export function LoginForm({refusal}: {refusal?: string}) {
           autoComplete={autoComplete}
           autoCapitalize="none"
           spellCheck={false}
+          placeholder={placeholder}
           value={password}
           onChange={(event) => setPasswordText(event.target.value)}
-          className="h-11"
+          className={FIELD}
         />
       </div>
     );
@@ -215,7 +219,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
     return (
       <form onSubmit={submitSignIn} noValidate className="flex flex-col gap-5">
         {emailField}
-        {passwordField('password', 'Password', 'current-password')}
+        {passwordField('password', 'Password', 'current-password', 'Enter your password')}
         {messages}
         <Button type="submit" disabled={pending} className={PRIMARY}>
           {pending ? 'Signing in…' : 'Sign in'}
@@ -287,7 +291,7 @@ export function LoginForm({refusal}: {refusal?: string}) {
         </InputOTP>
       </div>
       <div className="flex flex-col gap-2">
-        {passwordField('new-password', 'New password', 'new-password')}
+        {passwordField('new-password', 'New password', 'new-password', 'Choose a new password')}
         <p className="text-xs text-muted-foreground">At least 8 characters.</p>
       </div>
       {messages}

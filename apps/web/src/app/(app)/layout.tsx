@@ -1,5 +1,6 @@
 import {redirect} from 'next/navigation';
 import type {ReactNode} from 'react';
+import {BottomNav} from '@/app/(app)/bottom-nav';
 import {InstallCard} from '@/app/(app)/install-card';
 import {OfflineStrip} from '@/app/(app)/offline-strip';
 import {TopBar} from '@/app/(app)/top-bar';
@@ -21,7 +22,16 @@ export default async function AppLayout({children}: {children: ReactNode}) {
     <>
       <TopBar name={me.name} isAdmin={isAdmin(me.role)} />
       <OfflineStrip />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 md:px-6 md:py-6">{children}</main>
+      {/*
+       * The outer bound only. Each screen sets the measure its own content wants — the register and the
+       * timeline take the whole window, a clash message keeps a line short enough to track back from.
+       * There used to be one 1024px cap here, which left 460px of empty grey beside every screen on a
+       * laptop and squeezed the board's four columns to 232px.
+       *
+       * `pb-28` clears the phone's bottom bar; the desktop has none, so it drops back to ordinary padding.
+       */}
+      <main className="mx-auto w-full max-w-page flex-1 px-4 pt-4 pb-28 md:px-8 md:py-8">{children}</main>
+      <BottomNav isAdmin={isAdmin(me.role)} />
       <InstallCard />
     </>
   );

@@ -50,17 +50,19 @@ export function InstallCard() {
     }
   }
 
+  // Sits above the phone's bottom bar, never on top of it. That bar is 56px plus whatever the device
+  // reserves below it, so this offset is the same sum.
   return (
-    <div className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t bg-card p-4 shadow-lg md:mx-auto md:max-w-sm md:rounded-t-lg">
+    <div className="animate-slide-up fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-t bg-card p-4 shadow-lg md:bottom-0 md:mx-auto md:max-w-sm md:rounded-t-lg">
       <div className="flex items-center gap-2">
         <span aria-hidden className="size-2.5 rounded-[2px] bg-lime-500" />
-        <p className="font-heading text-[16px] font-semibold">Add {APP_NAME} to your home screen</p>
+        <p className="font-heading text-title font-semibold">Add {APP_NAME} to your home screen</p>
       </div>
 
       <ol className="mt-3 flex flex-col gap-1.5">
         {STEPS.map((step, index) => (
-          <li key={step} className="flex items-center gap-2 text-[13.5px]">
-            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-navy-800 font-mono text-[11px] text-white">
+          <li key={step} className="flex items-center gap-2 text-body">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-navy-800 font-mono text-label text-white">
               {index + 1}
             </span>
             {step}

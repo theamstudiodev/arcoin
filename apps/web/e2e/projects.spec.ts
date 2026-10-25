@@ -139,7 +139,13 @@ test('Athiq adds a project, and it lands in the tier chosen for it', async ({pag
 
     const added = tier(page, 'Ready to Release').getByRole('listitem').filter({hasText: name});
     await expect(added).toContainText('E2E-26-001');
-    await expect(added).toContainText('E2E Client');
+
+    // The client is on the project's own screen, not on the board card: the card carries the code, the
+    // lead, the next package and the forecast finish, which is what the partners read it for. Opening it
+    // from the card is also the only way into the register, so this covers both.
+    await added.getByRole('link', {name}).click();
+    await expect(page.getByRole('heading', {name, level: 1})).toBeVisible();
+    await expect(page.getByText('E2E Client')).toBeVisible();
   } finally {
     sql(`delete from public.projects where name = '${name}'`);
   }

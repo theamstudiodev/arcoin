@@ -32,21 +32,26 @@ export default async function TodayPage() {
   });
 
   return (
-    <>
-      {/* Full-bleed out of the layout's padding: on a phone this is the top of the installed app. */}
-      <header className="bg-navy-800 pt-safe -mx-4 -mt-4 mb-4 px-4 py-5 md:-mx-6 md:-mt-6 md:px-6">
-        <p className="text-[13px] text-lime-100">{brief.date}</p>
-        <h1 className="font-heading text-[22px] font-semibold text-white">{brief.greeting}</h1>
-        <p className="mt-0.5 text-[13px] text-navy-100">{brief.summary}</p>
+    <div className="mx-auto w-full max-w-form">
+      {/*
+       * The navy band runs out to the gutter, so these negatives have to cancel the shell's own padding
+       * exactly — px-4 on a phone, px-8 from md up. The notch is the top bar's business now: this header
+       * carried its own pt-safe back when Today was the only screen that reached the top of the phone,
+       * and keeping it meant Athiq's greeting paid for the inset twice.
+       */}
+      <header className="bg-navy-800 -mx-4 -mt-4 mb-5 px-4 py-5 md:mx-0 md:mt-0 md:mb-6 md:rounded-xl md:px-6 md:py-6">
+        <p className="text-meta text-lime-100">{brief.date}</p>
+        <h1 className="font-heading text-page font-semibold text-white">{brief.greeting}</h1>
+        <p className="mt-0.5 text-meta text-navy-100">{brief.summary}</p>
       </header>
 
       {brief.cards.length === 0 ? (
-        <div className="bg-blueprint rounded-lg border px-6 py-16 text-center">
-          <p aria-hidden className="font-heading text-[28px] text-lime-500">
+        <div className="bg-blueprint animate-in fade-in zoom-in-95 duration-settle rounded-lg border px-6 py-16 text-center">
+          <p aria-hidden className="font-heading text-stat text-lime-500">
             ✓
           </p>
-          <p className="mt-1 font-heading text-[18px] font-semibold text-white">Nothing needs you</p>
-          <p className="mt-1 text-[13.5px] text-navy-100">
+          <p className="mt-1 font-heading text-section font-semibold text-white">Nothing needs you</p>
+          <p className="mt-1 text-body text-navy-100">
             Everything on schedule.{' '}
             {brief.laterThisWeek > 0
               ? `${brief.laterThisWeek} ${brief.laterThisWeek === 1 ? 'drawing' : 'drawings'} due later this week.`
@@ -54,26 +59,26 @@ export default async function TodayPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start">
+        // The cards arrive in the order they matter — decide, slipped, due, issued — rather than all at
+        // once, so the first thing Athiq's eye lands on at half past eight is the one needing a decision.
+        <div className="stagger flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start md:gap-4">
           {brief.cards.map((card) => (
             <Card key={card.kind} card={card} />
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
 function Card({card}: {card: TodayCard}) {
   return (
     <section className={`rounded-lg border border-l-4 bg-card ${EDGE[card.kind]}`}>
-      <Link href={card.href} className="flex items-start gap-2 p-3 hover:bg-muted/40">
+      <Link href={card.href} className="flex items-start gap-2 p-3 transition-colors duration-quick hover:bg-muted/40">
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-            {card.label}
-          </p>
-          <p className="mt-0.5 text-[15px] leading-snug font-semibold">{card.headline}</p>
-          {card.sub && <p className="mt-0.5 text-[12.5px] text-navy-700">{card.sub}</p>}
+          <p className="font-mono text-label font-medium text-muted-foreground uppercase">{card.label}</p>
+          <p className="mt-0.5 text-title font-semibold">{card.headline}</p>
+          {card.sub && <p className="mt-0.5 text-meta text-navy-700">{card.sub}</p>}
         </div>
         <span aria-hidden className="mt-1 shrink-0 text-muted-foreground">
           ›
@@ -95,16 +100,28 @@ function Row({row}: {row: TodayRow}) {
   return (
     <li>
       {/* Every line taps through — that is the point of the screen, not a convenience. */}
-      <Link href={row.href} className="flex min-h-11 flex-wrap items-center gap-x-2 gap-y-0.5 px-3 py-2 hover:bg-muted/40">
-        {row.code && <span className="font-mono text-[11.5px] text-muted-foreground">{row.code}</span>}
-        <span className="min-w-0 flex-1 truncate text-[13.5px]">{row.text}</span>
-        {row.who && <span className="text-[12.5px] text-muted-foreground">{row.who}</span>}
-        {row.status && (
-          <Badge className={`rounded-[10px] text-[11px] ${TASK_STATUS_TONE[row.status]}`}>
-            {TASK_STATUS_LABELS[row.status]}
-          </Badge>
-        )}
-        {row.note && <span className="font-mono text-[11px] text-muted-foreground uppercase">{row.note}</span>}
+      <Link
+        href={row.href}
+        className="flex min-h-11 flex-col justify-center gap-0.5 px-3 py-2 transition-colors duration-quick hover:bg-muted/40 md:flex-row md:flex-wrap md:items-center md:gap-x-2"
+      >
+        {/*
+         * The drawing's name gets its own line on a phone. Across 390px, a code, a name, a person, a
+         * status pill and "4 DAYS LATE" on one row left the name about ten pixels wide — the one thing
+         * on the line Athiq is actually reading. From `md` up they all fit, so they share a row again.
+         */}
+        <span className="text-body md:order-2 md:min-w-0 md:flex-1 md:truncate">{row.text}</span>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 md:contents">
+          {row.code && <span className="font-mono text-meta text-muted-foreground md:order-1">{row.code}</span>}
+          {row.who && <span className="text-meta text-muted-foreground md:order-3">{row.who}</span>}
+          {row.status && (
+            <Badge className={`rounded-[10px] text-label md:order-4 ${TASK_STATUS_TONE[row.status]}`}>
+              {TASK_STATUS_LABELS[row.status]}
+            </Badge>
+          )}
+          {row.note && (
+            <span className="font-mono text-label text-muted-foreground uppercase md:order-5">{row.note}</span>
+          )}
+        </span>
       </Link>
     </li>
   );

@@ -114,12 +114,12 @@ export function StudioRulesCard({settings, canEdit}: {settings: SettingsRow; can
               ) : (
                 <>
                   <p className={FIELD_LABEL}>{rule.label}</p>
-                  <p className="font-mono text-[15px] tabular-nums">{stored[rule.key]}</p>
+                  <p className="font-mono text-title tabular-nums">{stored[rule.key]}</p>
                 </>
               )}
               {error && (
                 // A save with no button needs its refusal announced: nobody is watching for it.
-                <p id={`${fieldId}-error`} role="alert" className="text-[13px] text-destructive">
+                <p id={`${fieldId}-error`} role="alert" className="text-body text-destructive">
                   {error}
                 </p>
               )}
