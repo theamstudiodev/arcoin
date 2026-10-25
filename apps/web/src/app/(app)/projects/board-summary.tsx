@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {CountUp} from '@/app/(app)/count-up';
 import type {BoardSummary} from '@/lib/board';
 
 const STAT = 'inline-flex items-center gap-1.5 font-mono text-meta tabular-nums';
@@ -38,7 +39,9 @@ export function BoardSummary({summary}: {summary: BoardSummary}) {
           summary.clashes > 0 ? 'text-destructive' : 'text-muted-foreground'
         }`}
       >
-        <span className="font-semibold">{summary.clashes}</span>
+        <span className="font-semibold">
+          <CountUp value={summary.clashes} />
+        </span>
         {summary.clashes === 1 ? 'clash' : 'clashes'}
       </Link>
     </div>
