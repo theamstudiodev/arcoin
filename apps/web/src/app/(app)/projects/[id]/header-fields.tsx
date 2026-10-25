@@ -37,8 +37,10 @@ export function HeaderFields({project, leads}: {project: ProjectRow; leads: read
   const [pending, startTransition] = useTransition();
 
   function save(changes: Partial<ProjectRow>) {
-    const next = {...draft, ...changes};
-    setDraft(next);
+    // Built from what the database last accepted, never from the draft. Otherwise changing the Tier
+    // while a half-typed client name sits in the field beside it would save "Mr. R" along with it.
+    const next = {...saved, ...changes};
+    setDraft({...draft, ...changes});
     startTransition(async () => {
       const result = await updateProject({
         id: project.id,

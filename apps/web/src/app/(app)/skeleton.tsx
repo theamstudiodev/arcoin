@@ -20,8 +20,9 @@ export function Bar({className = '', style}: {className?: string; style?: CSSPro
 
 /**
  * The frame every loading screen shares: the page's own measure, a heading-sized block, and a label
- * nobody sees but a screen reader hears once. Not `aria-live`: this is replaced by the real screen
- * within a second or two, and announcing both is noise.
+ * nobody sees. `role="status"` announces that label politely — "Loading the drawing register" —
+ * which is the one thing a screen reader gets nothing of from a page of grey rectangles. Next's
+ * route announcer names the screen separately once it arrives.
  */
 export function LoadingShell({
   measure,
