@@ -33,7 +33,16 @@ export interface LeadChoice {
 }
 
 /** Adds a project (no `project`) or edits one. The page shows it to admins only; the database refuses anyone else. */
-export function ProjectDialog({project, leads}: {project?: ProjectRow; leads: readonly LeadChoice[]}) {
+export function ProjectDialog({
+  project,
+  leads,
+  trigger = 'button',
+}: {
+  project?: ProjectRow;
+  leads: readonly LeadChoice[];
+  /** 'fab' is the phone's floating action button, which the spec puts over the list rather than above it. */
+  trigger?: 'button' | 'fab';
+}) {
   const [open, setOpen] = useState(false);
   const title = project ? `Edit ${project.name}` : 'Add project';
 
@@ -51,6 +60,20 @@ export function ProjectDialog({project, leads}: {project?: ProjectRow; leads: re
           }
         >
           <PencilIcon />
+        </DialogTrigger>
+      ) : trigger === 'fab' ? (
+        // Lime is a fill with navy on it and never text on white, so the one bright control in the
+        // app is this: the thing a phone is most often opened to do. It sits above the bottom bar,
+        // out of the list's way, and names itself for anyone who cannot see that it is a plus.
+        <DialogTrigger
+          render={
+            <Button
+              aria-label="Add project"
+              className="fixed right-4 bottom-20 z-30 size-14 rounded-full bg-lime-500 text-navy-900 shadow-lg transition-transform duration-quick hover:bg-lime-500 active:scale-95 md:hidden"
+            />
+          }
+        >
+          <PlusIcon className="size-6" />
         </DialogTrigger>
       ) : (
         <DialogTrigger render={<Button variant="outline" className={`${FIELD} px-3`} />}>

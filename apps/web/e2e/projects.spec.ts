@@ -12,7 +12,24 @@ const DEVELOPMENT_TOP = ['Mangala Residence', 'Kadri Residence', 'Madikeri Campu
 const tier = (page: Page, name: string) =>
   page.locator('section').filter({has: page.getByRole('heading', {name, level: 2})});
 
+/**
+ * A phone shows one tier at a time behind a row of chips, so asking about a tier means choosing it
+ * first. At a desk all four are side by side and the chips are not there, which is why this looks
+ * before it clicks: the same spec then reads at either width.
+ */
+async function openTier(page: Page, name: string) {
+  const chip = page.getByRole('navigation', {name: 'Tiers'}).getByRole('button', {name});
+  if (await chip.isVisible()) await chip.click();
+  return tier(page, name);
+}
+
 const card = (page: Page, name: string) => page.getByRole('listitem').filter({hasText: name});
+
+/** Opens a project from the board, which on a phone is the only way in. */
+async function openProject(page: Page, tierName: string, name: string): Promise<void> {
+  await (await openTier(page, tierName)).getByRole('listitem').filter({hasText: name}).getByRole('link').first().click();
+  await expect(page.getByRole('heading', {name, level: 1})).toBeVisible();
+}
 
 async function openBoard(page: Page, email: string): Promise<void> {
   await signInThroughUi(page, email);
@@ -24,22 +41,24 @@ test('Athiq sees the four tiers, each project under the right one, in priority o
   await openBoard(page, E2E_ADMIN);
 
   for (const [name, count] of Object.entries(TIER_COUNTS)) {
+    const column = await openTier(page, name);
     await expect(page.getByRole('heading', {name, level: 2})).toBeVisible();
-    await expect(tier(page, name).getByRole('listitem'), name).toHaveCount(count);
+    await expect(column.getByRole('listitem'), name).toHaveCount(count);
   }
 
   // Priority 1 first — the order the studio works in — and priority 15 last.
-  const inOrder = await tier(page, 'Development').getByRole('listitem').allTextContents();
+  const inOrder = await (await openTier(page, 'Development')).getByRole('listitem').allTextContents();
   DEVELOPMENT_TOP.forEach((name, i) => expect(inOrder[i], `position ${i}`).toContain(name));
   expect(inOrder[14]).toContain('Kankanady Mixed Use');
 
   // A waiting room has nothing to rank, so it falls back to the name — at 15 and 10 rows that matters.
-  const dormant = await tier(page, 'Dormant').getByRole('listitem').allTextContents();
+  const dormant = await (await openTier(page, 'Dormant')).getByRole('listitem').allTextContents();
   expect(dormant[0]).toContain('Adyar Farmhouse');
 
+  await openTier(page, 'Ready to Release');
   await expect(card(page, 'Kavoor Clinic')).toBeVisible();
   await expect(
-    tier(page, 'Response Awaited').getByRole('listitem').filter({hasText: 'Bejai Apartments'}),
+    (await openTier(page, 'Response Awaited')).getByRole('listitem').filter({hasText: 'Bejai Apartments'}),
   ).toBeVisible();
 });
 
@@ -47,17 +66,19 @@ test('each capped tier shows how full it is, and the waiting rooms show no limit
   await openBoard(page, E2E_ADMIN);
 
   // Both production tiers are seeded exactly at their limit.
-  await expect(tier(page, 'Development')).toContainText('15 / 15');
-  await expect(tier(page, 'Development').getByLabel('15 of 15 projects')).toBeVisible();
-  await expect(tier(page, 'Ready to Release').getByLabel('10 of 10 projects')).toBeVisible();
-
+  const development = await openTier(page, 'Development');
+  await expect(development).toContainText('15 / 15');
+  await expect(development.getByLabel('15 of 15 projects')).toBeVisible();
   // At the limit is not over it.
-  await expect(tier(page, 'Development')).not.toContainText('over');
-  await expect(tier(page, 'Ready to Release')).not.toContainText('over');
+  await expect(development).not.toContainText('over');
+
+  const ready = await openTier(page, 'Ready to Release');
+  await expect(ready.getByLabel('10 of 10 projects')).toBeVisible();
+  await expect(ready).not.toContainText('over');
 
   // Response Awaited and Dormant hold whatever the client list produces.
-  await expect(tier(page, 'Response Awaited').getByLabel('15 projects, no limit')).toBeVisible();
-  await expect(tier(page, 'Dormant').getByLabel('10 projects, no limit')).toBeVisible();
+  await expect((await openTier(page, 'Response Awaited')).getByLabel('15 projects, no limit')).toBeVisible();
+  await expect((await openTier(page, 'Dormant')).getByLabel('10 projects, no limit')).toBeVisible();
 });
 
 test('a tier over its limit is marked', async ({page}) => {
@@ -66,8 +87,9 @@ test('a tier over its limit is marked', async ({page}) => {
     sql(`insert into public.projects (org_id, name, tier) values ('${AM_STUDIO}', 'E2E Over The Line', 'development')`);
     await openBoard(page, E2E_ADMIN);
 
-    await expect(tier(page, 'Development')).toContainText('16 / 15');
-    await expect(tier(page, 'Development')).toContainText('1 over');
+    const development = await openTier(page, 'Development');
+    await expect(development).toContainText('16 / 15');
+    await expect(development).toContainText('1 over');
   } finally {
     sql("delete from public.projects where name like 'E2E %'");
   }
@@ -79,24 +101,31 @@ test('a tier with nothing in it says so', async ({page}) => {
     sql("update public.projects set tier = 'response_awaited' where tier = 'dormant'");
     await openBoard(page, E2E_ADMIN);
 
-    await expect(tier(page, 'Dormant')).toContainText('Nothing here');
-    await expect(tier(page, 'Dormant').getByLabel('0 projects, no limit')).toBeVisible();
+    const dormant = await openTier(page, 'Dormant');
+    await expect(dormant).toContainText('Nothing here');
+    await expect(dormant.getByLabel('0 projects, no limit')).toBeVisible();
   } finally {
     // The dormant projects are the only AMS-24 codes in the seed.
     sql("update public.projects set tier = 'dormant' where code like 'AMS-24-%'");
   }
 });
 
-test('Athiq moves a project to another tier from its card', async ({page}) => {
+test('Athiq moves a project to another tier, and the board follows', async ({page}) => {
   try {
     await openBoard(page, E2E_ADMIN);
-    await card(page, 'Kavoor Clinic').getByLabel('Tier for Kavoor Clinic').selectOption({label: 'Development'});
+    // Tier and priority are changed on the project's own screen, which is the one place a phone can
+    // change them: the list rows carry no controls, by the scope's choice.
+    await openProject(page, 'Ready to Release', 'Kavoor Clinic');
+    await page.getByLabel('Tier', {exact: true}).selectOption({label: 'Development'});
+    await expect.poll(() => sql("select tier from public.projects where name = 'Kavoor Clinic'")).toBe('development');
 
-    await expect(tier(page, 'Development').getByRole('listitem').filter({hasText: 'Kavoor Clinic'})).toBeVisible();
+    await page.goto('/projects');
+    await expect(
+      (await openTier(page, 'Development')).getByRole('listitem').filter({hasText: 'Kavoor Clinic'}),
+    ).toBeVisible();
     // Ready to Release drops to nine, and Development is now one past its limit.
-    await expect(tier(page, 'Ready to Release').getByLabel('9 of 10 projects')).toBeVisible();
-    await expect(tier(page, 'Development')).toContainText('1 over');
-    expect(sql("select tier from public.projects where name = 'Kavoor Clinic'")).toBe('development');
+    await expect((await openTier(page, 'Ready to Release')).getByLabel('9 of 10 projects')).toBeVisible();
+    await expect(await openTier(page, 'Development')).toContainText('1 over');
   } finally {
     sql("update public.projects set tier = 'ready_to_release' where name = 'Kavoor Clinic'");
   }
@@ -105,17 +134,21 @@ test('Athiq moves a project to another tier from its card', async ({page}) => {
 test('raising a project up the priority list re-orders the board — the Monday change', async ({page}) => {
   try {
     await openBoard(page, E2E_ADMIN);
-    const priority = card(page, 'Madikeri Campus Block').getByLabel('Priority for Madikeri Campus Block');
+    await openProject(page, 'Development', 'Madikeri Campus Block');
 
     // Madikeri is third. Make it most urgent and it leads Development.
+    const priority = page.getByLabel('Priority', {exact: true});
     await priority.fill('1');
-    await priority.press('Enter');
+    // The header saves the moment a field is left, the way Settings does. Nothing is pressed.
+    await priority.press('Tab');
+    await expect.poll(() => sql("select priority from public.projects where name = 'Madikeri Campus Block'")).toBe('1');
 
-    await expect(tier(page, 'Development').getByRole('listitem').first()).toContainText('Madikeri Campus Block');
-    expect(sql("select priority from public.projects where name = 'Madikeri Campus Block'")).toBe('1');
+    await page.goto('/projects');
+    const development = await openTier(page, 'Development');
+    await expect(development.getByRole('listitem').first()).toContainText('Madikeri Campus Block');
 
     // The projects nobody touched keep their own order behind it.
-    const inOrder = await tier(page, 'Development').getByRole('listitem').allTextContents();
+    const inOrder = await development.getByRole('listitem').allTextContents();
     expect(inOrder[1]).toContain('Mangala Residence');
     expect(inOrder[2]).toContain('Kadri Residence');
   } finally {
@@ -138,7 +171,7 @@ test('Athiq adds a project, and it lands in the tier chosen for it', async ({pag
     await add.getByRole('button', {name: 'Add project'}).click();
     await expect(add).toBeHidden();
 
-    const added = tier(page, 'Ready to Release').getByRole('listitem').filter({hasText: name});
+    const added = (await openTier(page, 'Ready to Release')).getByRole('listitem').filter({hasText: name});
     await expect(added).toContainText('E2E-26-001');
 
     // The client is on the project's own screen, not on the board card: the card carries the code, the
@@ -174,6 +207,11 @@ test('a junior sees the board read-only', async ({page}) => {
   await expect(page.getByRole('button', {name: /^Edit /})).toHaveCount(0);
   await expect(page.getByLabel(/^Tier for /)).toHaveCount(0);
   await expect(page.getByLabel(/^Priority for /)).toHaveCount(0);
+
+  // And the project's own screen, where a phone changes a tier, offers them nothing either.
+  await openProject(page, 'Development', 'Kadri Residence');
+  await expect(page.getByLabel('Tier', {exact: true})).toHaveCount(0);
+  await expect(page.getByLabel('Priority', {exact: true})).toHaveCount(0);
 });
 
 test('a junior cannot move a project directly', async () => {
