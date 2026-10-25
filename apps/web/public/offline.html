@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B2545" />
+    <title>Arcoin — offline</title>
+    <!--
+      The screen the service worker shows when a page is asked for with no network, instead of Safari's
+      "cannot open the page", which in an installed app looks like Arcoin itself is broken.
+
+      Plain HTML with its own styles: it is served from the cache by the worker, so it can reach neither
+      Tailwind nor the fonts. The blueprint below repeats the one in globals.css by hand, without the drift
+      animation — CLAUDE.md reserves it for the login page, the PWA splash and empty states, and this is the
+      splash by another name.
+    -->
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 24px calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom))
+          calc(24px + env(safe-area-inset-left));
+        text-align: center;
+        color: #fff;
+        font:
+          400 15px/1.5 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        background-color: #081c33;
+        background-image:
+          linear-gradient(rgba(163, 230, 53, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(163, 230, 53, 0.06) 1px, transparent 1px),
+          linear-gradient(rgba(201, 214, 229, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(201, 214, 229, 0.045) 1px, transparent 1px),
+          radial-gradient(1400px 900px at 72% 28%, #0b2545 0%, #081c33 55%, #050f1e 100%);
+        background-size:
+          120px 120px,
+          120px 120px,
+          24px 24px,
+          24px 24px,
+          100% 100%;
+      }
+      h1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 18px;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      h1 span {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        background: #a3e635;
+      }
+      h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+        max-width: 24rem;
+        color: #c9d6e5;
+        font-size: 13.5px;
+      }
+      button {
+        margin-top: 14px;
+        min-height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 8px;
+        background: #a3e635;
+        color: #081c33;
+        font-size: 15px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><span aria-hidden="true"></span>Arcoin</h1>
+    <h2>No connection</h2>
+    <p>This screen is drawn fresh for you every time, so it needs the network. Whatever is already open still works.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </body>
+</html>

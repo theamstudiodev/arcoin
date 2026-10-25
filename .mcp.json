@@ -18,6 +18,10 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?read_only=true&project_ref=aiaxzemsbrsghlimfzpk"
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }

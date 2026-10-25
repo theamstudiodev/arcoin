@@ -9,3 +9,14 @@ coverage/
 supabase/.branches
 supabase/.temp
 .DS_Store
+
+# Playwright output: traces and screenshots from the last run
+test-results/
+playwright-report/
+
+# Screenshots the Playwright MCP browser writes while a screen is being looked at
+.playwright-mcp/
+
+# The design hook's per-file cache. Its config.json, which holds the reviewed
+# exceptions, is committed; this is only what the last run happened to see.
+.impeccable/hook.cache.json

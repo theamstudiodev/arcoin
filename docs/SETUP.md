@@ -48,11 +48,17 @@ Staff could not sign in with it at all. Configure Resend as the sender:
 2. Resend → API Keys → create one with *Sending access*.
 3. Supabase → `studesk-staging` → Authentication → Emails → SMTP settings → Enable custom SMTP:
    - Host `smtp.resend.com` · Port `465` · Username `resend` · Password: the Resend API key
-   - Sender email `studesk@<verified-domain>` · Sender name `Studesk`
-4. Authentication → Emails → Templates → **Magic link**: subject `Your Studesk sign-in code`,
-   body: paste `supabase/templates/sign-in-code.html`. It contains `{{ .Token }}`, which turns the
-   magic link into a **6-digit code** — the one that works inside the installed iPhone app.
-5. Authentication → Providers → Email: keep it enabled; set the OTP expiry to `600` seconds.
+   - Sender email `arcoin@<verified-domain>` · Sender name `Arcoin` — staff see this in their inbox
+4. Authentication → Emails → Templates: give **Magic link**, **Confirm signup** and **Reset password** the same
+   subject, `Set your Arcoin password`, and the same body: paste `supabase/templates/sign-in-code.html`. It contains
+   `{{ .Token }}`, which turns the link into a **6-digit code**. A brand-new account's first code comes in
+   *Confirm signup*, every later one in *Magic link*; *Reset password* is what anyone asking Supabase directly for a
+   reset gets, so it must carry a code too, never a link. People sign in with email and password; the code only sets
+   a first password or resets a forgotten one, typed inside the app — so it works in the installed iPhone app.
+5. Authentication → Providers → Email: keep it enabled, keep **Allow new users to sign up** on (the first code
+   creates the account) and leave **Confirm email** on. With Confirm email off, anyone who knows the email of a
+   teammate who hasn't signed in yet can sign up as them with a password of their own and skip the code.
+   Set the OTP expiry to `600` seconds and the minimum password length to `8`.
 6. Authentication → URL configuration: site URL `http://localhost:3000` for now.
 
 ---
@@ -94,8 +100,9 @@ You now have:
 | Database | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 | Mailpit | http://127.0.0.1:54324 — every sign-in code sent locally lands here |
 
-Sign-in test: once the app exists, sign in as `athiq@amstudio.test` and read the code from Mailpit.
-Any email not in the seeded team list is refused — that's the allowlist working.
+Sign-in test: `npm run test:e2e`. It gives the seeded test logins a password through the emailed code (read from
+Mailpit), then signs in as `athiq@amstudio.test`. Any email not in the seeded team list is refused — that's the
+allowlist working.
 
 ### Everyday commands
 
@@ -132,6 +139,10 @@ insert into public.people (org_id, email, name, role, capacity, sort_order) valu
   ('<org-id>', '<nashwa-email>',  'Ar. Nashwa',  'junior',    1,    6),
   ('<org-id>', '<prapthi-email>', 'Ar. Prapthi', 'junior',    1,    7);
 ```
+
+Everyone can then set their password whenever suits them, in any order. An account holds no password until
+someone proves they receive the email, so registering a teammate's address first gains nothing — see
+`supabase/migrations/20261018050438_password_needs_verified_email.sql`.
 
 From then on, people are added through the app's People screen. Projects come in through the import
 script you'll write in week 6 from the studio's list of 50.
@@ -191,7 +202,8 @@ of truth and means a restore can never resurrect an old version of a rule.
 - [ ] Ops Google account and `Studesk/backups` Drive folder — owned by AM Studio
 - [ ] GitHub org `am-studio`, private repo `studesk`, you added
 - [ ] Supabase org owned by AM Studio, `studesk-staging` **in Mumbai**
-- [ ] Resend domain verified, SMTP configured, 6-digit code template in place
+- [ ] Resend domain verified, SMTP configured, the 6-digit code in the Magic link, Confirm signup and Reset password
+      templates, Confirm email on
 - [ ] `supabase start` and `./scripts/test-db.sh` passing on your laptop
 - [ ] `supabase db push` to staging; real team inserted with real emails
 - [ ] CI green on the first push

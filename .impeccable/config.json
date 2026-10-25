@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/web/src/app/(app)/clashes/page.tsx"
+        ],
+        "createdAt": "2026-10-21T09:59:15.739Z",
+        "reason": "Specified by the project's own design doc, not an incidental style: docs/STITCH-PROMPTS.md:216 says 'Each clash is a card with a 4px left edge coloured by severity: red for blocking, amber for warning, navy for informational.' The same edge is specified at :136 and :337, so it is a system-wide convention. It is semantic, not decorative — Part 1 of that doc reserves red and amber for lateness and warnings only. Not user-confirmed in conversation; evidence is the committed spec."
+      },
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "apps/web/src/app/globals.css"
+        ],
+        "createdAt": "2026-10-22T01:35:00.349Z",
+        "reason": "This is the blueprint surface for an architecture practice, and the rule's own exception list names blueprints. Specified in docs/STITCH-PROMPTS.md Screen 1 ('a navy-900 full-bleed background with a faint technical grid pattern at 4% opacity') and fenced in CLAUDE.md to the login page, the PWA splash and empty states only — every working screen stays on the flat light background because dense data reads better on it. Evidence is the committed spec, not the user's say-so."
+      }
+    ]
+  }
+}

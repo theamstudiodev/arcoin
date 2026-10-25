@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-montserrat);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,31 +48,127 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Brand palette (docs/STITCH-PROMPTS.md Part 1). Navy is for interaction; lime means done, on track or "now". */
+@theme {
+  --color-navy-900: #081C33;
+  --color-navy-800: #0B2545;
+  --color-navy-700: #13395E;
+  --color-navy-600: #16406B;
+  --color-navy-400: #4A7BA7;
+  /* Pale enough to read on navy-800: 10.4:1. Used for the summary line in the phone's navy header. */
+  --color-navy-100: #C9D6E5;
+  /* The only green in the system. Tailwind's own limes are OKLCH and differ from these. */
+  --color-lime-100: #ECFCCB;
+  --color-lime-500: #A3E635;
+  --color-lime-600: #84CC16;
+  /* What STITCH-PROMPTS calls "lime-dark". Lime is a fill colour, never text on white: lime-500 reaches
+     only 1.5:1 there and lime-600 1.98:1. This is the first step down the scale that passes AA at 5.0:1,
+     so package codes can be set in it. */
+  --color-lime-700: #4D7C0F;
+
+  /* De-emphasised meta — week dates on the timeline, a role under a name, a project name in the legend.
+     5.13:1 on a white card and 4.78:1 on the #F6F7F8 page, so it passes AA at the 13px floor on both
+     backgrounds. Three of its four uses sit on the page, not on a card, which is what rules out the
+     nearer greys: #8A949C was 3.09/2.88 and #6B7680 is 4.64/4.32 — both fail where it is actually used. */
+  --color-text-faint: #646F79;
+  /* Lateness and warnings, never decoration. Each tint is a background with its own tone as the text. */
+  --color-late-tint: #FEF2F2;
+  --color-at-risk: #F59E0B;
+  --color-at-risk-tint: #FFFBEB;
+  --color-info: #2563EB;
+  --color-info-tint: #EFF6FF;
+
+  /* Project identity, separate from status. Eight hues that avoid red and amber (reserved for lateness)
+     and avoid green (lime is the only green), so a bar's colour can never be mistaken for a state.
+     Every one carries a white 11px label at the 90% opacity the timeline draws them with — the weakest
+     is pink at 5.3:1. Colour is never the only cue: bars carry the project code and the legend repeats
+     it, so the timeline still reads without colour vision. */
+  --color-project-1: #1D4ED8;
+  --color-project-2: #155E75;
+  --color-project-3: #6D28D9;
+  --color-project-4: #BE185D;
+  --color-project-5: #115E59;
+  --color-project-6: #7C2D12;
+  --color-project-7: #334155;
+  --color-project-8: #A21CAF;
+
+  /* The type scale, one step above STITCH-PROMPTS Part 1. Named steps rather than text-[13px], because an
+     arbitrary size ships no line-height: every one of the 159 we had inherited 1.5, which is why dense text
+     read as cramped and loose at the same time. Each step carries its own ratio — tight for headings and
+     numbers, open for anything the studio reads a sentence of. Nothing goes below --text-meta except labels. */
+  --text-label: 0.6875rem; /* 11px · uppercase eyebrows and column headers only */
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.08em;
+  --text-meta: 0.8125rem; /* 13px · secondary lines, mono data, the floor for anything readable */
+  --text-meta--line-height: 1.45;
+  --text-body: 0.9375rem; /* 15px · body and table content */
+  --text-body--line-height: 1.5;
+  /* Named --text-title, not --text-card: shadcn defines --color-card, and Tailwind's `text-*` covers
+     both the colour and the font-size namespaces, so `text-card` would silently mean white text. */
+  --text-title: 1rem; /* 16px · card and row titles */
+  --text-title--line-height: 1.35;
+  --text-section: clamp(1.125rem, 1rem + 0.5vw, 1.25rem); /* 18 → 20px · section headings */
+  --text-section--line-height: 1.25;
+  --text-stat: 1.625rem; /* 26px · the big derived numbers: forecast finish, hours left */
+  --text-stat--line-height: 1.1;
+  --text-page: clamp(1.5rem, 1.1rem + 1.6vw, 1.875rem); /* 24px on a phone → 30px on the laptop */
+  --text-page--line-height: 1.15;
+  /* Every form field, at every width — never `md:text-sm`. Below 16px iOS Safari zooms the page and
+     stays zoomed, and `md` is 768px, which is an iPad in portrait running iOS Safari. */
+  --text-field: 1rem;
+  --text-field--line-height: 1.4;
+
+  /* Measures. Every screen picks one rather than inheriting a single app-wide cap: the register and the
+     timeline want the whole window, a clash message wants a line short enough to track back from. */
+  --container-page: 90rem; /* 1440 — data screens, full window */
+  --container-wide: 80rem; /* 1280 — People, once the week bars are on it */
+  --container-form: 68.75rem; /* 1100 — Settings, Today, My work */
+  --container-reading: 56.25rem; /* 900 — Clashes, which is prose. Not "prose": that name is Tailwind's own 65ch utility. */
+
+  /* Motion. Soft-out for arrivals, spring for anything that should feel pressed or confirmed. */
+  --transition-duration-quick: 120ms; /* a colour, a hover, a press */
+  --transition-duration-brisk: 180ms; /* a pill changing status, a control filling */
+  --transition-duration-settle: 260ms; /* a card or a page arriving */
+  --transition-duration-draw: 420ms; /* a bar drawn along the timeline */
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1); /* arrivals decelerate hard */
+  --ease-exit: cubic-bezier(0.64, 0, 0.78, 0);
+  --animate-rise-in: rise-in var(--transition-duration-settle) var(--ease-enter) both;
+  --animate-fade-in: fade-in var(--transition-duration-settle) var(--ease-enter) both;
+  --animate-grow-x: grow-x var(--transition-duration-draw) var(--ease-enter) both;
+  --animate-grow-y: grow-y var(--transition-duration-draw) var(--ease-enter) both;
+  --animate-pop: pop var(--transition-duration-brisk) var(--ease-enter);
+  --animate-slide-up: slide-up var(--transition-duration-settle) var(--ease-enter) both;
+  --animate-shimmer: shimmer 1400ms linear infinite;
+}
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* The phone's bottom bar is fixed, so the page and anything else pinned low has to know how tall it
+     is. Zero from `md` up, where the bar does not exist. */
+  --bottom-nav-h: 3.5rem;
+  --background: #F6F7F8;
+  --foreground: #141A21;
+  --card: #FFFFFF;
+  --card-foreground: #141A21;
+  --popover: #FFFFFF;
+  --popover-foreground: #141A21;
+  --primary: #0B2545;
+  --primary-foreground: #FFFFFF;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: #5B6670;
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --destructive: #DC2626;
+  --border: #E2E6E9;
+  --input: #C7CDD1;
+  --ring: #16406B;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -117,6 +213,10 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@media (width >= 48rem) {
+  :root { --bottom-nav-h: 0px; }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -127,4 +227,126 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+}
+/*
+ * The blueprint: navy with a soft glow top-right, a fine 24px grid in pale blue-grey and a 120px grid in faint
+ * lime, drifting slowly sideways. ONLY for the login page, the PWA splash and empty states — working screens stay
+ * on the light background, because dense data reads better on light.
+ */
+/* The installed app draws edge to edge (viewport-fit: cover), so anything pinned to the top or bottom
+   of the phone adds the inset itself. Tailwind ships no utility for this. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility bg-blueprint {
+  background-color: #081C33;
+  background-image:
+    linear-gradient(rgba(163,230,53,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(163,230,53,0.06) 1px, transparent 1px),
+    linear-gradient(rgba(201,214,229,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,214,229,0.045) 1px, transparent 1px),
+    radial-gradient(1400px 900px at 72% 28%, #0B2545 0%, #081C33 55%, #050F1E 100%);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px, 100% 100%;
+  animation: blueprint-drift 30s linear infinite; /* 4px a second */
+}
+@keyframes blueprint-drift {
+  to { background-position: 120px 0, 120px 0, 120px 0, 120px 0, 0 0; }
+}
+
+/*
+ * The studio's motion vocabulary. Four verbs, used everywhere, so nothing on screen moves in a way that has
+ * to be learned twice: things arrive by rising, bars and progress grow from where they start, and anything
+ * that confirms a change pops once.
+ */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes grow-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes pop {
+  from { transform: scale(0.92); }
+  60% { transform: scale(1.03); }
+  to { transform: scale(1); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes shimmer {
+  from { background-position: 135% 0; }
+  to { background-position: -135% 0; }
+}
+
+/*
+ * A list arriving one line after another. Written as nth-child rather than a delay per element, because
+ * Tailwind only emits class names it can read literally and a stagger is a different delay each time.
+ * It stops counting at the ninth child: a fifty-row register must not take two seconds to appear, and
+ * past about eight rows the eye has stopped noticing anyway.
+ */
+@utility stagger {
+  & > * { animation: rise-in var(--transition-duration-settle) var(--ease-enter) both; }
+  & > *:nth-child(2) { animation-delay: 30ms; }
+  & > *:nth-child(3) { animation-delay: 60ms; }
+  & > *:nth-child(4) { animation-delay: 90ms; }
+  & > *:nth-child(5) { animation-delay: 120ms; }
+  & > *:nth-child(6) { animation-delay: 150ms; }
+  & > *:nth-child(7) { animation-delay: 180ms; }
+  & > *:nth-child(8) { animation-delay: 210ms; }
+  & > *:nth-child(n + 9) { animation-delay: 240ms; }
+}
+
+/* Table rows fade only. A transform on a <tr> is unreliable across engines. */
+@utility stagger-rows {
+  & > tr { animation: fade-in var(--transition-duration-brisk) var(--ease-enter) both; }
+  & > tr:nth-child(n + 2) { animation-delay: 20ms; }
+  & > tr:nth-child(n + 5) { animation-delay: 60ms; }
+  & > tr:nth-child(n + 9) { animation-delay: 100ms; }
+}
+
+/* A shimmer, not a spinner. A spinner says "wait"; this says "here is the shape of what is coming". */
+@utility skeleton {
+  background-color: var(--muted);
+  background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.75) 50%, transparent 100%);
+  background-size: 135% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1400ms linear infinite;
+}
+
+/*
+ * One gate for every animation in the app, including tw-animate-css and the OTP caret, both of which
+ * shipped unguarded. Some people get motion sick; some simply turned it off.
+ *
+ * `animation: none`, not a collapsed duration, for two reasons: apps/web/e2e/sign-in.spec.ts reads
+ * `animation-name` and expects exactly "none", and a cancelled animation leaves the element in its
+ * resting state. That is why no component here carries its hidden state in its own CSS — the "from" is
+ * only ever inside a keyframe, so removing the animation reveals the content rather than hiding it.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  html { scroll-behavior: auto; }
 }

@@ -131,9 +131,11 @@ Phase 3 swaps in the `capacity_calendar` table so approved leave reduces it.
 
 ## Stack
 
-- **Next.js** (current major) App Router, React 19, TypeScript strict — in `apps/web`
+- **Next.js** (current major) App Router, React 19, TypeScript strict — in `apps/web`. Next 16 calls middleware
+  *proxy*: the session refresh lives in `apps/web/src/proxy.ts`.
 - **Tailwind 4** + shadcn/ui
-- **Supabase**: Postgres 17, Auth (6-digit email code), row-level security. Mumbai region.
+- **Supabase**: Postgres 17, Auth (email and password; a 6-digit emailed code sets the first password
+  and resets a forgotten one), row-level security. Mumbai region.
 - **SQL migrations** in `supabase/migrations/` are the schema's single source of truth
 - **supabase-js** with generated types (`apps/web/src/lib/database.types.ts`) for every query — so every
   user query runs under row-level security. **Do not add an ORM that connects to Postgres
@@ -182,12 +184,29 @@ Design the policies now so those slot in without rework.
 - Error messages name what went wrong and what to do: "Task needs an assignee before it can be
   scheduled", never "Invalid input".
 
+## Design
+
+- The product's visible name is **Arcoin** — login, top bar, tab title, sign-in email (`APP_NAME` in
+  `apps/web/src/lib/brand.ts`). Code, packages, tables and docs keep `studesk`.
+- `bg-blueprint` (`apps/web/src/app/globals.css`) is used ONLY on the login page, the PWA splash and empty states.
+  Working screens — People, Projects, Timeline and every other data screen — stay on the light background `#F6F7F8`,
+  because dense data reads better on light.
+- Colours, type scale and density: `docs/STITCH-PROMPTS.md` Part 1.
+
 ## Do not
 
 - Do not add a column, index or policy "while you're there" — every schema change is its own reviewed migration.
 - Do not install a charting library. The timeline is a custom layout over a date scale; a chart
   library will be fought, not used.
 - Do not use `localStorage` for anything that must survive or be shared.
+- Do not declare a setting in `supabase/config.toml` that only local needs. The file drives `supabase start`
+  **and** `supabase config push`, so a local convenience is also an instruction to change staging.
+  `scripts/configure-supabase.mjs` holds the three rules (SETTINGS / UNDECLARED / REMOTES) and
+  `docs/STAGING-VALIDATION.md` §E explains them. A new hosted project needs its own `[remotes.…]` block
+  before its first push.
+- Do not turn off email confirmation (`enable_confirmations` in `supabase/config.toml`, *Confirm email* in the
+  dashboard). With it off, anyone who knows the email of a teammate who hasn't signed in yet can sign up as them
+  with a password and skip the emailed code. `apps/web/e2e/account-security.spec.ts` proves it stays closed.
 - Do not build an abstraction for a second org, a second branch or a plugin system. Carry
   `org_id` and stop there.
 
@@ -199,6 +218,8 @@ Design the policies now so those slot in without rework.
   raises error `42501` with a readable message. Show that message; don't pre-check it in React.
 - `projects.tier_since` updates itself on every tier change.
 - Sign-in is an allowlist: an email not in `people` cannot create an account (trigger on `auth.users`).
+- An account holds no password until its email is verified, so registering a teammate's address first gains
+  nothing. Never let a password reach a row with `email_confirmed_at is null`.
 - Every change to people, projects, packages, tasks and settings lands in `audit_log`.
 
 ## Commands
@@ -207,7 +228,9 @@ Design the policies now so those slot in without rework.
 supabase start                 # local stack: API :54321 · DB :54322 · Studio :54323 · Mailpit :54324
 supabase db reset              # rebuild local DB from migrations + seed
 supabase migration new <name>  # never edit a migration that has been applied anywhere
-./scripts/test-db.sh           # access tests — must pass before any push
+./scripts/test-db.sh           # access tests — must pass before any push. Local Postgres only; it refuses anything else
+./scripts/test-guards.sh       # proves the database scripts refuse a non-local or non-empty target
 npm run db:types               # regenerate apps/web/src/lib/database.types.ts after any migration
 npm run dev / npm test / npm run typecheck
+npm run test:e2e               # Playwright vs local Supabase + Mailpit (supabase start first)
 ```

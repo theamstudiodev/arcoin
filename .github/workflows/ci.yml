@@ -19,6 +19,8 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Script safety guards          # the database scripts refuse anything but a local database
+        run: ./scripts/test-guards.sh
       - name: Apply migrations, seed, run access tests
         env:
           ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
